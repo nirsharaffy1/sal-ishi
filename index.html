@@ -294,6 +294,9 @@ function showLogin() {
   document.getElementById('app').innerHTML = `
     <div class="card login">
       <h2>כניסה למערכת</h2>
+      ${window.API_URL && isIOS() && !isStandalone() ? `
+        <div class="alert warn small"><b>באייפון:</b> הכניסה נשמרת רק באפליקציה שבמסך הבית, ולא בספארי.
+        קודם מוסיפים למסך הבית (כפתור השיתוף <span class="ios-share">⬆︎</span> ← "הוספה למסך הבית"), פותחים מהאייקון "סל אישי", ונכנסים משם.</div>` : ''}
       ${L.step === 'email' ? `
         <p class="muted">יש להזין את כתובת המייל הרשומה במערכת. יישלח אלייך קוד כניסה.</p>
         <label class="f">כתובת מייל</label>
@@ -341,11 +344,24 @@ async function loginVerify() {
   try {
     const r = await call('verify', { email: S.login.email, code });
     setToken(r.token);
+    keepStorage();
     S.login = { step: 'email', email: '' };
     loginBusy = false;
     init();
   } catch (e) { unlockLogin('login-verify'); fail(e); }
 }
+/** מבקש מהדפדפן לא למחוק את הכניסה השמורה גם כשהזיכרון בטלפון מתמלא. */
+function keepStorage() {
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+}
+
+function confirmLogout() {
+  openModal(`<h3>התנתקות מהחשבון</h3>
+    <p>אחרי התנתקות, בכניסה הבאה יהיה צריך לקבל קוד חדש למייל.</p>
+    <p class="muted small">כדי רק לסגור את האפליקציה אין צורך להתנתק. אפשר פשוט לצאת ממנה, והכניסה תישמר.</p>
+    <div class="form-actions"><button class="btn danger" data-a="logout-yes">להתנתק</button><button class="btn pri" data-a="modal-close">ביטול</button></div>`);
+}
+
 async function logout() {
   try { await call('logout'); } catch (e) {}
   setToken('');
@@ -403,7 +419,8 @@ async function init() {
     S.today = S.boot.today;
     S.day.date = S.today;
     S.day.teacher = S.boot.user.email;
-    document.getElementById('userbox').innerHTML = `<span>${h(S.boot.user.name)} · ${h(S.boot.user.role)}</span><button data-a="logout">יציאה</button>`;
+    document.getElementById('userbox').innerHTML = `<span>${h(S.boot.user.name)} · ${h(S.boot.user.role)}</span><button data-a="logout">התנתקות</button>`;
+    keepStorage();
     const tabs = tabsFor();
     let saved = ''; try { saved = localStorage.getItem('sal_tab') || ''; } catch (e) {}
     const start = tabs.some(t => t[0] === saved) ? saved : (canView() && !S.boot.hasLessons ? 'dash' : tabs[0][0]);
@@ -1135,7 +1152,8 @@ document.addEventListener('click', e => {
     case 'login-send': return loginSend();
     case 'login-verify': return loginVerify();
     case 'login-back': S.login.step = 'email'; return showLogin();
-    case 'logout': return logout();
+    case 'logout': return confirmLogout();
+    case 'logout-yes': return logout();
     case 'install-now': return installNow();
     case 'install-later': return installLater();
     case 'tab': return go(v);
