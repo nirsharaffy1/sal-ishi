@@ -311,20 +311,40 @@ function showLogin() {
   if (el) el.focus();
 }
 
+/** נועל את כפתור הכניסה בזמן שהבקשה בדרך, כדי שלחיצה כפולה לא תשלח פעמיים. */
+let loginBusy = false;
+function lockLogin(action, text) {
+  loginBusy = true;
+  const b = document.querySelector(`[data-a="${action}"]`);
+  if (b) { b.disabled = true; b.dataset.label = b.textContent; b.textContent = text; }
+}
+function unlockLogin(action) {
+  loginBusy = false;
+  const b = document.querySelector(`[data-a="${action}"]`);
+  if (b) { b.disabled = false; if (b.dataset.label) b.textContent = b.dataset.label; }
+}
+
 async function loginSend() {
+  if (loginBusy) return;
   const email = document.getElementById('lg-email').value.trim();
   if (!email) return toast('יש להזין מייל', true);
   S.login.email = email;
-  try { await call('sendCode', { email }); S.login.step = 'code'; showLogin(); } catch (e) { fail(e); }
+  lockLogin('login-send', 'שולחת קוד…');
+  try { await call('sendCode', { email }); loginBusy = false; S.login.step = 'code'; showLogin(); }
+  catch (e) { unlockLogin('login-send'); fail(e); }
 }
 async function loginVerify() {
+  if (loginBusy) return;
   const code = document.getElementById('lg-code').value.trim();
+  if (!/^\d{6}$/.test(code)) return toast('יש להזין את 6 הספרות מהמייל', true);
+  lockLogin('login-verify', 'בודקת…');
   try {
     const r = await call('verify', { email: S.login.email, code });
     setToken(r.token);
     S.login = { step: 'email', email: '' };
+    loginBusy = false;
     init();
-  } catch (e) { fail(e); }
+  } catch (e) { unlockLogin('login-verify'); fail(e); }
 }
 async function logout() {
   try { await call('logout'); } catch (e) {}
