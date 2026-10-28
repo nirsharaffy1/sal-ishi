@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<script>window.API_URL = "https://script.google.com/macros/s/AKfycbwFBaM8Je1NXoedf5-4sgrWT0wSlKnmJ7oSGUUkYWWsoSh0npl18_XWmGrQKZLycv4BOA/exec";</script>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="סל אישי">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>מעקב שעות סל אישי</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6f8; --card: #fff; --ink: #1f2937; --muted: #6b7280; --line: #e5e7eb;
+    --pri: #0f766e; --pri-ink: #fff; --pri-weak: #e6f4f2;
+    --ok: #15803d; --ok-bg: #dcfce7; --warn: #b45309; --warn-bg: #fef3c7;
+    --bad: #b91c1c; --bad-bg: #fee2e2; --info: #1d4ed8; --info-bg: #dbeafe;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: Heebo, Arial, sans-serif; font-size: 16px; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  .top { background: var(--pri); color: var(--pri-ink); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .brand { font-weight: 700; font-size: 18px; }
+  .userbox { font-size: 14px; display: flex; gap: 10px; align-items: center; }
+  .userbox button { background: transparent; border: 1px solid rgba(255,255,255,.6); color: #fff; border-radius: 8px; padding: 3px 10px; cursor: pointer; font-size: 13px; }
+  nav.tabs { display: flex; gap: 4px; background: #fff; border-bottom: 1px solid var(--line); padding: 0 8px; overflow-x: auto; position: sticky; top: 0; z-index: 5; }
+  nav.tabs button { border: 0; background: none; padding: 12px 14px; cursor: pointer; white-space: nowrap; color: var(--muted); border-bottom: 3px solid transparent; font-weight: 500; }
+  nav.tabs button.on { color: var(--pri); border-bottom-color: var(--pri); }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  h2 { font-size: 20px; margin: 4px 0 12px; }
+  h3 { font-size: 17px; margin: 20px 0 10px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .grow { flex: 1; }
+  .btn { border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 9px 14px; cursor: pointer; font-weight: 500; }
+  .btn:hover { border-color: #cbd5e1; }
+  .btn.pri { background: var(--pri); color: #fff; border-color: var(--pri); }
+  .btn.ghost { border-color: transparent; background: transparent; color: var(--pri); }
+  .btn.danger { color: var(--bad); }
+  .btn.sm { padding: 5px 10px; font-size: 14px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  label.f { display: block; font-size: 14px; color: var(--muted); margin: 10px 0 4px; }
+  input[type=text], input[type=email], input[type=number], input[type=date], input[type=time], select, textarea {
+    width: 100%; border: 1px solid #d1d5db; border-radius: 10px; padding: 9px 10px; background: #fff; }
+  textarea { min-height: 60px; resize: vertical; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 500; white-space: nowrap; }
+  .b-ok { background: var(--ok-bg); color: var(--ok); }
+  .b-warn { background: var(--warn-bg); color: var(--warn); }
+  .b-bad { background: var(--bad-bg); color: var(--bad); }
+  .b-info { background: var(--info-bg); color: var(--info); }
+  .b-missing { background: var(--bad-bg); color: var(--bad); }
+  .b-pending { background: #f3f4f6; color: #374151; }
+  .b-future { background: #f3f4f6; color: var(--muted); }
+  .tag { display: inline-block; font-size: 12px; background: #f3f4f6; color: #374151; border-radius: 6px; padding: 1px 7px; margin-inline-start: 6px; font-weight: 400; }
+
+  /* שיעור */
+  .lesson { border-inline-start: 5px solid var(--line); }
+  .lesson.s-ok { border-inline-start-color: var(--ok); }
+  .lesson.s-warn { border-inline-start-color: #f59e0b; }
+  .lesson.s-bad, .lesson.s-missing { border-inline-start-color: var(--bad); }
+  .lesson.s-info { border-inline-start-color: var(--info); }
+  .lesson-head { display: flex; gap: 12px; align-items: flex-start; }
+  .lesson-time { font-weight: 700; font-size: 17px; min-width: 52px; }
+  .lesson-subj { font-weight: 700; }
+  .lesson-studs { color: #374151; font-size: 15px; margin-top: 2px; }
+  .lesson-sum { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .choice { border: 2px solid var(--line); background: #fff; border-radius: 12px; padding: 14px 8px; cursor: pointer; font-weight: 500; font-size: 15px; }
+  .choice.on.c-ok { border-color: var(--ok); background: var(--ok-bg); color: var(--ok); }
+  .choice.on.c-warn { border-color: #f59e0b; background: var(--warn-bg); color: var(--warn); }
+  .choice.on.c-bad { border-color: var(--bad); background: var(--bad-bg); color: var(--bad); }
+  .choice.on.c-info { border-color: var(--info); background: var(--info-bg); color: var(--info); }
+  .stud-row { border-top: 1px solid var(--line); padding: 10px 0; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .seg button { border: 0; background: #fff; padding: 7px 14px; cursor: pointer; }
+  .seg button.on.p { background: var(--ok-bg); color: var(--ok); font-weight: 700; }
+  .seg button.on.a { background: var(--bad-bg); color: var(--bad); font-weight: 700; }
+  .form-actions { display: flex; gap: 8px; margin-top: 14px; }
+  .form-actions .btn.pri { flex: 1; padding: 12px; font-size: 17px; }
+  .alert { border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; }
+  .alert.bad { background: var(--bad-bg); color: #7f1d1d; }
+  .alert.warn { background: var(--warn-bg); color: #78350f; }
+  .datebar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .datebar .label { flex: 1; text-align: center; font-weight: 700; font-size: 18px; }
+  .empty { text-align: center; color: var(--muted); padding: 30px 10px; }
+
+  /* לוח בקרה */
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 12px; cursor: pointer; font-size: 14px; }
+  .chip.on { background: var(--pri); color: #fff; border-color: var(--pri); }
+  .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 14px 0; }
+  .kpi { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; }
+  .kpi .v { font-size: 26px; font-weight: 700; }
+  .kpi .l { font-size: 13px; color: var(--muted); }
+  .kpi.bad .v { color: var(--bad); } .kpi.ok .v { color: var(--ok); } .kpi.info .v { color: var(--info); } .kpi.warn .v { color: var(--warn); }
+  .tbl-wrap { overflow-x: auto; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { padding: 8px 10px; text-align: start; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { background: #f9fafb; font-weight: 500; color: #374151; position: sticky; top: 0; }
+  td.num, th.num { text-align: center; }
+  tr.click { cursor: pointer; } tr.click:hover td { background: #f9fafb; }
+  tr.low td, tr.low td.first { background: #fff1f2; }
+  .low-link { color: inherit; font-weight: 500; }
+  .who { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .hist.changed { border-inline-start: 4px solid #f59e0b; }
+  .hist-line { font-size: 14px; margin-top: 6px; }
+  .hist-line span { font-weight: 500; }
+  .hist-line.before { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(0,0,0,.25); }
+  .hist-line.before span { text-decoration: none; display: inline-block; }
+  td.first, th.first { position: sticky; right: 0; background: inherit; }
+  tbody td.first { background: #fff; font-weight: 500; }
+  .pct { display: flex; align-items: center; gap: 6px; min-width: 110px; }
+  .pct .bar { flex: 1; height: 8px; background: #eef0f3; border-radius: 4px; overflow: hidden; }
+  .pct .bar i { display: block; height: 100%; }
+  .bars .b { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 14px; }
+  .bars .b .t { width: 45%; }
+  .bars .b .track { flex: 1; background: #eef0f3; border-radius: 4px; height: 10px; overflow: hidden; }
+  .bars .b .track i { display: block; height: 100%; background: var(--pri); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  details summary { cursor: pointer; font-weight: 500; padding: 6px 0; }
+
+  /* מערכת שעות */
+  .daycol h4 { margin: 16px 0 8px; font-size: 16px; color: var(--pri); }
+  .slot { display: flex; gap: 12px; align-items: center; }
+
+  /* ניהול */
+  .subtabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .list-item { display: flex; gap: 10px; align-items: center; }
+  .dim { opacity: .55; }
+  .checks { max-height: 220px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 10px; padding: 6px 10px; }
+  .checks label { display: flex; gap: 8px; align-items: center; padding: 5px 0; }
+
+  /* חלון קופץ */
+  .modal { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: flex; align-items: flex-start; justify-content: center; padding: 30px 12px; z-index: 50; overflow-y: auto; }
+  .modal.hidden { display: none; }
+  .modal-box { background: #fff; border-radius: 16px; width: 100%; max-width: 520px; padding: 18px; }
+  .modal-box h3 { margin-top: 0; }
+
+  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; padding: 10px 18px; border-radius: 10px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 60; max-width: 90vw; text-align: center; }
+  #toast.show { opacity: 1; }
+  #toast.err { background: var(--bad); }
+  #busy { position: fixed; top: 0; right: 0; left: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--pri), transparent); background-size: 200% 100%; animation: slide 1s linear infinite; display: none; z-index: 70; }
+  #busy.on { display: block; }
+  @keyframes slide { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  .login { max-width: 380px; margin: 40px auto; }
+  #install-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: #fff; border-top: 3px solid var(--pri);
+    box-shadow: 0 -4px 16px rgba(0,0,0,.12); padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 8px; align-items: center; }
+  #install-bar .small { color: var(--muted); margin-top: 2px; }
+  .ios-share { display: inline-block; border: 1px solid #94a3b8; border-radius: 4px; padding: 0 4px; font-size: 12px; }
+  @media (display-mode: standalone) { .top { padding-top: calc(12px + env(safe-area-inset-top)); } }
+
+  .report-head h2 { margin-bottom: 2px; }
+  .report-kpis { grid-template-columns: repeat(auto-fit, minmax(95px, 1fr)); }
+
+  @media print {
+    @page { size: A4 landscape; margin: 10mm; }
+    .top, nav.tabs, .no-print, #dev-panel, #dev-notice, #toast, #busy, .modal { display: none !important; }
+    html, body { background: #fff; font-size: 12px; }
+    main { max-width: none; padding: 0; }
+    .card, .kpi { border-color: #bbb; break-inside: avoid; }
+    .report-kpis { grid-template-columns: repeat(7, 1fr); margin: 8px 0; }
+    .kpi { padding: 4px 8px; } .kpi .v { font-size: 16px; }
+    .tbl-wrap { overflow: visible; border: 0; border-radius: 0; }
+    table { font-size: 10.5px; }
+    th, td { white-space: normal !important; padding: 3px 5px; border: 1px solid #bbb; }
+    th { position: static; background: #eee !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    thead { display: table-header-group; }
+    tr { break-inside: avoid; }
+    h3 { break-after: avoid; margin: 12px 0 6px; }
+  }
+
+  @media (max-width: 640px) {
+    main { padding: 12px; }
+    .two { grid-template-columns: 1fr; }
+    .kpi .v { font-size: 22px; }
+    .brand { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+<div id="busy"></div>
+<header class="top">
+  <div class="brand">מעקב שעות סל אישי</div>
+  <div class="userbox" id="userbox"></div>
+</header>
+<nav class="tabs" id="tabs"></nav>
+<main id="app"><div class="empty">טוען…</div></main>
+<div id="modal" class="modal hidden"><div class="modal-box" id="modal-box"></div></div>
+<div id="toast"></div>
+
+<script>
+/* ============================== קבועים ומצב ============================== */
+const HELD = 'התקיים', NOT_HELD = 'לא התקיים', POSTPONED = 'נדחה';
+const DAY_LETTERS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+const ROLE_COORD = 'רכזת', ROLE_TEACHER = 'מורה', ROLE_MANAGER = 'הנהלה';
+
+const S = {
+  boot: null, tab: null, today: null,
+  day: { date: null, teacher: '', data: null }, forms: {},
+  dash: { preset: 'week', from: '', to: '', data: null, f: { student: '', teacher: '', subject: '', className: '' } },
+  rep: { preset: 'month', from: '', to: '', data: null, f: { student: '', teacher: '', subject: '', className: '' }, view: 'students', student: '' },
+  sched: { date: '', data: null, f: { student: '', teacher: '', className: '', day: '' } },
+  admin: { sub: 'students', data: null, showEnded: false },
+  login: { step: 'email', email: '' },
+};
+
+/* ============================== תקשורת עם השרת ============================== */
+let busyCount = 0;
+function setBusy(d) { busyCount += d; document.getElementById('busy').classList.toggle('on', busyCount > 0); }
+
+function getToken() { try { return localStorage.getItem('sal_token') || ''; } catch (e) { return S._token || ''; } }
+function setToken(t) { S._token = t; try { t ? localStorage.setItem('sal_token', t) : localStorage.removeItem('sal_token'); } catch (e) {} }
+
+/**
+ * שליחת פעולה לשרת. בתוך Google (Apps Script) – דרך google.script.run.
+ * באפליקציה המותקנת (PWA) מוגדר window.API_URL – ואז דרך fetch לכתובת הסקריפט.
+ */
+function transport(action, payload) {
+  const args = [getToken(), action, JSON.stringify(payload || {})];
+  if (window.API_URL) {
+    return fetch(window.API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ token: args[0], action: args[1], payload: args[2] }),
+    }).then(r => { if (!r.ok) throw new Error('השרת לא זמין כרגע (' + r.status + ')'); return r.text(); });
+  }
+  return new Promise((resolve, reject) => {
+    google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).api(...args);
+  });
+}
+
+function call(action, payload) {
+  setBusy(1);
+  return transport(action, payload)
+    .catch(e => {
+      if (navigator.onLine === false) throw new Error('אין חיבור לאינטרנט. נסי שוב כשתהיה קליטה.');
+      if (e instanceof TypeError) throw new Error('לא הצלחנו להתחבר לשרת. נסי שוב בעוד רגע.');
+      throw new Error(e && e.message ? e.message : 'בעיית תקשורת. נסי שוב.');
+    })
+    .then(txt => {
+      const r = JSON.parse(txt);
+      if (r.ok) return r.data;
+      const err = new Error(r.error || 'שגיאה');
+      err.auth = !!r.auth;
+      if (r.auth) showLogin();
+      throw err;
+    })
+    .finally(() => setBusy(-1));
+}
+
+/* ============================== עזרים ============================== */
+function h(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function parseD(d) { const [y, m, dd] = d.split('-').map(Number); return new Date(Date.UTC(y, m - 1, dd)); }
+function addDays(d, n) { const x = parseD(d); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); }
+function weekday(d) { return parseD(d).getUTCDay(); }
+function fmtDate(d, withDay = true) { if (!d) return ''; const [, m, dd] = d.split('-'); return (withDay ? 'יום ' + DAY_LETTERS[weekday(d)] + ' ' : '') + (+dd) + '.' + (+m); }
+function fmtStamp(s) { const [d, t] = String(s).split(' '); return d && d.length === 10 ? fmtFull(d) + (t ? ' ' + t : '') : s; }
+function fmtFull(d) { if (!d) return ''; const [y, m, dd] = d.split('-'); return (+dd) + '.' + (+m) + '.' + y; }
+function toast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show' + (isErr ? ' err' : '');
+  clearTimeout(t._h); t._h = setTimeout(() => { t.className = ''; }, isErr ? 4500 : 2200);
+}
+function fail(e) { if (!e.auth) toast(e.message || 'שגיאה', true); }
+function isCoord() { return S.boot && S.boot.user.role === ROLE_COORD; }
+function canView() { return S.boot && (S.boot.user.role === ROLE_COORD || S.boot.user.role === ROLE_MANAGER); }
+function opt(v, label, sel) { return `<option value="${h(v)}"${String(v) === String(sel) ? ' selected' : ''}>${h(label)}</option>`; }
+function uniq(arr) { return [...new Set(arr.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'he')); }
+function threshold() { return (S.boot && S.boot.threshold) || 75; }
+function pctColor(p) { return p >= Math.max(90, threshold()) ? 'var(--ok)' : p >= threshold() ? '#f59e0b' : 'var(--bad)'; }
+function isLow(r) { return r.due >= 3 && r.present / r.due * 100 < threshold(); }
+function pctCell(num, den) {
+  if (!den) return '<span class="muted">—</span>';
+  const p = Math.min(100, Math.round(num / den * 100));
+  return `<div class="pct"><div class="bar"><i style="width:${p}%;background:${pctColor(p)}"></i></div><b style="color:${pctColor(p)}">${p}%</b></div>`;
+}
+function studentsText(list) { return list.map(s => s.name + (s.className ? ` (${s.className})` : '')).join(', '); }
+
+/* ============================== כניסה ============================== */
+function showLogin() {
+  document.getElementById('tabs').innerHTML = '';
+  document.getElementById('userbox').innerHTML = '';
+  const L = S.login;
+  document.getElementById('app').innerHTML = `
+    <div class="card login">
+      <h2>כניסה למערכת</h2>
+      ${L.step === 'email' ? `
+        <p class="muted">יש להזין את כתובת המייל הרשומה במערכת. יישלח אלייך קוד כניסה.</p>
+        <label class="f">כתובת מייל</label>
+        <input type="email" id="lg-email" value="${h(L.email)}" dir="ltr" autocomplete="email">
+        <div class="form-actions"><button class="btn pri" data-a="login-send">שליחת קוד</button></div>
+      ` : `
+        <p class="muted">נשלח קוד בן 6 ספרות אל <b dir="ltr">${h(L.email)}</b></p>
+        <label class="f">קוד כניסה</label>
+        <input type="text" id="lg-code" inputmode="numeric" maxlength="6" dir="ltr" autocomplete="one-time-code">
+        <div class="form-actions"><button class="btn pri" data-a="login-verify">כניסה</button></div>
+        <button class="btn ghost" data-a="login-back">שינוי כתובת / שליחה מחדש</button>
+      `}
+    </div>`;
+  const el = document.getElementById(L.step === 'email' ? 'lg-email' : 'lg-code');
+  if (el) el.focus();
+}
+
+async function loginSend() {
+  const email = document.getElementById('lg-email').value.trim();
+  if (!email) return toast('יש להזין מייל', true);
+  S.login.email = email;
+  try { await call('sendCode', { email }); S.login.step = 'code'; showLogin(); } catch (e) { fail(e); }
+}
+async function loginVerify() {
+  const code = document.getElementById('lg-code').value.trim();
+  try {
+    const r = await call('verify', { email: S.login.email, code });
+    setToken(r.token);
+    S.login = { step: 'email', email: '' };
+    init();
+  } catch (e) { fail(e); }
+}
+async function logout() {
+  try { await call('logout'); } catch (e) {}
+  setToken('');
+  location.reload();
+}
+
+/* ============================== התקנה כאפליקציה (רק בגרסה המותקנת) ============================== */
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; showInstall(); });
+window.addEventListener('appinstalled', () => { installEvt = null; hideInstall(); });
+
+function isStandalone() { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; }
+function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+function installDismissed() { try { return Number(localStorage.getItem('sal_install_dismissed') || 0) > Date.now(); } catch (e) { return false; } }
+
+function showInstall() {
+  if (!window.API_URL || isStandalone() || installDismissed()) return;
+  if (!installEvt && !isIOS()) return;
+  let bar = document.getElementById('install-bar');
+  if (!bar) { bar = document.createElement('div'); bar.id = 'install-bar'; document.body.appendChild(bar); }
+  bar.innerHTML = installEvt
+    ? `<div class="grow"><b>📲 התקנת האפליקציה בטלפון</b><div class="small">כך תיכנסי בלחיצה אחת ממסך הבית</div></div>
+       <button class="btn pri" data-a="install-now">התקנה</button><button class="btn ghost" data-a="install-later">לא עכשיו</button>`
+    : `<div class="grow"><b>📲 התקנת האפליקציה באייפון</b>
+         <div class="small">בספארי: לוחצים על כפתור השיתוף <span class="ios-share">⬆︎</span> בתחתית המסך ← <b>"הוספה למסך הבית"</b> ← "הוסף". אחר כך נכנסים מהאייקון שנוצר.</div></div>
+       <button class="btn ghost" data-a="install-later">סגירה</button>`;
+}
+function hideInstall() { const b = document.getElementById('install-bar'); if (b) b.remove(); }
+async function installNow() {
+  if (!installEvt) return;
+  installEvt.prompt();
+  const choice = await installEvt.userChoice.catch(() => null);
+  installEvt = null;
+  hideInstall();
+  if (choice && choice.outcome === 'accepted') toast('האפליקציה הותקנה ✓');
+}
+function installLater() {
+  try { localStorage.setItem('sal_install_dismissed', String(Date.now() + 7 * 24 * 3600 * 1000)); } catch (e) {}
+  hideInstall();
+}
+
+/* ============================== מבנה כללי ============================== */
+function tabsFor() {
+  const u = S.boot.user, t = [];
+  if (u.role === ROLE_TEACHER || u.role === ROLE_COORD || S.boot.hasLessons) t.push(['day', u.role === ROLE_COORD ? 'דיווח שיעורים' : 'השיעורים שלי']);
+  if (canView()) t.push(['dash', 'לוח בקרה'], ['rep', 'דוחות']);
+  t.push(['sched', canView() ? 'מערכת שעות' : 'המערכת שלי']);
+  if (isCoord()) t.push(['admin', 'ניהול']);
+  return t;
+}
+
+async function init() {
+  try {
+    S.boot = await call('bootstrap', { appUrl: window.API_URL ? location.href : '' });
+    S.today = S.boot.today;
+    S.day.date = S.today;
+    S.day.teacher = S.boot.user.email;
+    document.getElementById('userbox').innerHTML = `<span>${h(S.boot.user.name)} · ${h(S.boot.user.role)}</span><button data-a="logout">יציאה</button>`;
+    const tabs = tabsFor();
+    let saved = ''; try { saved = localStorage.getItem('sal_tab') || ''; } catch (e) {}
+    const start = tabs.some(t => t[0] === saved) ? saved : (canView() && !S.boot.hasLessons ? 'dash' : tabs[0][0]);
+    go(start);
+  } catch (e) {
+    if (!e.auth) document.getElementById('app').innerHTML = `<div class="alert bad">${h(e.message)}</div>`;
+  }
+}
+
+function go(tab) {
+  S.tab = tab;
+  try { localStorage.setItem('sal_tab', tab); } catch (e) {}
+  document.getElementById('tabs').innerHTML = tabsFor().map(([k, l]) => `<button class="${k === tab ? 'on' : ''}" data-a="tab" data-v="${k}">${l}</button>`).join('');
+  document.getElementById('app').innerHTML = '<div class="empty">טוען…</div>';
+  ({ day: loadDay, dash: loadDash, rep: loadReports, sched: loadSched, admin: loadAdmin })[tab]();
+}
+
+/* ============================== השיעורים שלי / דיווח ============================== */
+async function loadDay() {
+  try {
+    S.day.data = await call('myDay', { date: S.day.date, teacherEmail: S.day.teacher });
+    S.forms = {};
+    renderDay();
+  } catch (e) { fail(e); }
+}
+
+function allDayLessons() { const d = S.day.data; return d ? d.lessons.concat(d.missing) : []; }
+function findLesson(id) { return allDayLessons().find(l => l.id === id); }
+
+function renderDay() {
+  const d = S.day.data, date = S.day.date;
+  const isToday = date === S.today;
+  let html = '';
+  if (isCoord()) {
+    html += `<div class="card"><label class="f" style="margin-top:0">דיווח עבור</label>
+      <select data-a="day-teacher">${S.boot.teachers.filter(t => t.role !== ROLE_MANAGER).map(t => opt(t.email, t.name + (t.email === S.boot.user.email ? ' (אני)' : ''), S.day.teacher)).join('')}</select></div>`;
+  }
+  if (d.missing.length) {
+    html += `<div class="alert bad"><b>${d.missing.length === 1 ? 'יש שיעור אחד שעדיין לא דווח' : `יש ${d.missing.length} שיעורים שעדיין לא דווחו`}</b> מהשבועות האחרונים. אפשר לדווח עליהם למטה.</div>`;
+  }
+  html += `<div class="datebar">
+      <button class="btn sm" data-a="day-move" data-v="-1">→ הקודם</button>
+      <div class="label">${isToday ? 'היום, ' : ''}${fmtDate(date)}</div>
+      <button class="btn sm" data-a="day-move" data-v="1">הבא ←</button>
+    </div>
+    <div class="row" style="justify-content:center;margin-bottom:12px">
+      <input type="date" value="${date}" data-a="day-pick" style="max-width:180px">
+      ${isToday ? '' : '<button class="btn sm" data-a="day-today">חזרה להיום</button>'}
+    </div>`;
+  html += d.lessons.length ? d.lessons.map(l => lessonCard(l, false)).join('')
+    : `<div class="empty">${weekday(date) === 6 ? 'שבת שלום 🙂' : 'אין שיעורים מתוכננים ביום זה'}</div>`;
+  if (d.missing.length) {
+    html += `<h3>ממתינים לדיווח מימים קודמים</h3>` + d.missing.map(l => lessonCard(l, true)).join('');
+  }
+  document.getElementById('app').innerHTML = html;
+}
+
+function statusInfo(l) {
+  if (!l.status) {
+    if (l.date < S.today) return { cls: 'missing', text: 'טרם דווח' };
+    if (l.date === S.today) return { cls: 'pending', text: 'ממתין לדיווח' };
+    return { cls: 'future', text: 'מתוכנן' };
+  }
+  if (l.status === HELD) {
+    const n = l.students.length, abs = l.students.filter(s => s.present === false).length;
+    if (!abs) return { cls: 'ok', text: n > 1 ? 'התקיים · כולן נכחו' : 'התקיים · נכחה' };
+    if (abs === n) return { cls: 'warn', text: n > 1 ? 'התקיים · אף אחת לא נכחה' : 'התקיים · לא נכחה' };
+    return { cls: 'warn', text: `התקיים · ${n - abs} מתוך ${n} נכחו` };
+  }
+  if (l.status === NOT_HELD) return { cls: 'bad', text: 'לא התקיים' };
+  return { cls: 'info', text: l.makeupDate ? 'נדחה ל' + fmtDate(l.makeupDate) : 'נדחה' };
+}
+
+function lessonSummary(l) {
+  if (!l.status) return '';
+  const parts = [];
+  if (l.reason) parts.push('סיבה: ' + l.reason + (l.reasonText ? ' – ' + l.reasonText : ''));
+  l.students.filter(s => s.present === false).forEach(s => {
+    parts.push((l.students.length > 1 ? s.name + ' נעדרה: ' : 'סיבת היעדרות: ') + (s.reason || '') + (s.reasonText ? ' – ' + s.reasonText : ''));
+  });
+  if (l.topic) parts.push('נלמד: ' + l.topic);
+  if (l.note) parts.push('הערה: ' + l.note);
+  const who = l.reportedAt ? `<div class="who">דווח ${l.reportedByOther ? 'ע״י ' + h(l.reportedByName) + ' ' : ''}ב־${h(fmtStamp(l.reportedAt))}</div>` : '';
+  return (parts.length ? `<div class="lesson-sum">${parts.map(h).join('<br>')}</div>` : '') + who;
+}
+
+function lessonCard(l, showDate) {
+  const st = statusInfo(l);
+  const f = S.forms[l.id];
+  const future = l.date > S.today;
+  return `<div class="card lesson s-${st.cls}" id="L-${h(l.id)}">
+    <div class="lesson-head">
+      <div class="lesson-time">${h(l.time)}</div>
+      <div class="grow">
+        <div class="lesson-subj">${h(l.subject)}${showDate ? `<span class="tag">${fmtDate(l.date)}</span>` : ''}${l.kind === 'השלמה' ? `<span class="tag">השלמה${l.makeupOfDate ? ' לשיעור מ' + fmtDate(l.makeupOfDate) : ''}</span>` : ''}${l.students.length > 1 ? '<span class="tag">קבוצתי</span>' : ''}</div>
+        <div class="lesson-studs">${h(studentsText(l.students))}</div>
+      </div>
+      <span class="badge b-${st.cls}">${h(st.text)}</span>
+    </div>
+    ${f && f.open ? renderForm(l) : lessonSummary(l) + (future ? '' : `<div class="row" style="margin-top:10px"><button class="btn ${l.status ? 'sm' : 'pri'}" data-a="open-form" data-id="${h(l.id)}">${l.status ? 'עריכת דיווח' : 'דיווח על השיעור'}</button></div>`)}
+  </div>`;
+}
+
+function formFor(l) {
+  if (!S.forms[l.id]) {
+    const att = {};
+    l.students.forEach(s => { att[s.id] = { present: s.present !== false, reason: s.reason || '', reasonText: s.reasonText || '' }; });
+    S.forms[l.id] = { open: false, status: l.status, reason: l.reason, reasonText: l.reasonText, topic: l.topic, note: l.note,
+      makeupDate: l.makeupDate || '', makeupTime: l.makeupTime || l.time, att };
+  }
+  return S.forms[l.id];
+}
+
+function reasonSelect(list, value, attrs) {
+  return `<select ${attrs}><option value="">בחרי סיבה…</option>${list.map(r => opt(r, r, value)).join('')}</select>`;
+}
+
+function renderForm(l) {
+  const f = formFor(l), id = h(l.id);
+  const single = l.students.length === 1, sid = l.students[0].id;
+  const B = S.boot;
+  let choice = '';
+  if (f.status === HELD) choice = single ? (f.att[sid].present ? 'hp' : 'ha') : 'h';
+  else if (f.status === NOT_HELD) choice = 'n';
+  else if (f.status === POSTPONED) choice = 'p';
+  const opts = single
+    ? [['hp', 'התקיים – התלמידה נכחה', 'ok'], ['ha', 'התקיים – התלמידה לא נכחה', 'warn'], ['n', 'השיעור לא התקיים', 'bad'], ['p', 'נדחה / הועבר למועד אחר', 'info']]
+    : [['h', 'התקיים', 'ok'], ['n', 'השיעור לא התקיים', 'bad'], ['p', 'נדחה / הועבר', 'info']];
+  let html = `<div class="choices"${single ? '' : ' style="grid-template-columns:1fr 1fr 1fr"'}>` +
+    opts.map(([v, label, c]) => `<button class="choice c-${c}${choice === v ? ' on' : ''}" data-a="choose" data-id="${id}" data-v="${v}">${label}</button>`).join('') + '</div>';
+
+  if (f.status === HELD) {
+    if (single) {
+      const a = f.att[sid];
+      if (!a.present) html += absenceFields(id, sid, a, B);
+    } else {
+      html += '<div style="margin-top:12px">' + l.students.map(s => {
+        const a = f.att[s.id];
+        return `<div class="stud-row"><div class="row"><div class="grow">${h(s.name)} <span class="muted small">${h(s.className)}</span></div>
+          <div class="seg"><button class="p${a.present ? ' on' : ''}" data-a="att" data-id="${id}" data-sid="${h(s.id)}" data-v="1">נכחה</button><button class="a${!a.present ? ' on' : ''}" data-a="att" data-id="${id}" data-sid="${h(s.id)}" data-v="0">נעדרה</button></div></div>
+          ${a.present ? '' : absenceFields(id, s.id, a, B)}</div>`;
+      }).join('') + '</div>';
+    }
+    html += `<label class="f">מה נלמד בשיעור</label><input type="text" data-f="topic" data-id="${id}" value="${h(f.topic)}" placeholder="לדוגמה: שברים פשוטים">`;
+  }
+  if (f.status === NOT_HELD || f.status === POSTPONED) {
+    html += `<label class="f">${f.status === NOT_HELD ? 'למה השיעור לא התקיים?' : 'סיבת הדחייה'}</label>` + reasonSelect(B.lessonReasons, f.reason, `data-f="reason" data-id="${id}"`);
+    if (f.reason === B.otherReason) html += `<input type="text" style="margin-top:6px" data-f="reasonText" data-id="${id}" value="${h(f.reasonText)}" placeholder="פירוט הסיבה">`;
+  }
+  if (f.status === POSTPONED) {
+    html += `<label class="f">המועד החדש (אם כבר נקבע)</label>
+      <div class="row"><input type="date" class="grow" data-f="makeupDate" data-id="${id}" value="${h(f.makeupDate)}" min="${h(l.date)}" style="width:auto">
+      <input type="time" data-f="makeupTime" data-id="${id}" value="${h(f.makeupTime)}" style="width:120px"></div>
+      <div class="muted small" style="margin-top:4px">שיעור ההשלמה יופיע אצלך ביום שנבחר.</div>`;
+  }
+  if (f.status) html += `<label class="f">הערה (לא חובה)</label><input type="text" data-f="note" data-id="${id}" value="${h(f.note)}">`;
+  html += `<div class="form-actions"><button class="btn pri" data-a="save-report" data-id="${id}"${f.status ? '' : ' disabled'}>שמירה</button><button class="btn" data-a="close-form" data-id="${id}">ביטול</button></div>`;
+  return html;
+}
+
+function absenceFields(id, sid, a, B) {
+  return `<label class="f">סיבת ההיעדרות</label>` + reasonSelect(B.absenceReasons, a.reason, `data-f="attReason" data-id="${id}" data-sid="${h(sid)}"`) +
+    (a.reason === B.otherReason ? `<input type="text" style="margin-top:6px" data-f="attReasonText" data-id="${id}" data-sid="${h(sid)}" value="${h(a.reasonText)}" placeholder="פירוט">` : '');
+}
+
+function rerenderLesson(id) {
+  const l = findLesson(id), el = document.getElementById('L-' + id);
+  if (!l || !el) return;
+  const showDate = S.day.data.missing.some(x => x.id === id);
+  el.outerHTML = lessonCard(l, showDate);
+}
+
+async function saveReport(id) {
+  const l = findLesson(id), f = S.forms[id];
+  const payload = {
+    id, status: f.status, reason: f.reason, reasonText: f.reasonText, topic: f.topic, note: f.note,
+    makeupDate: f.status === POSTPONED ? f.makeupDate : '', makeupTime: f.makeupTime,
+    attendance: l.students.map(s => ({ studentId: s.id, present: f.att[s.id].present, reason: f.att[s.id].reason, reasonText: f.att[s.id].reasonText })),
+  };
+  try { await call('report', payload); toast('הדיווח נשמר ✓'); loadDay(); } catch (e) { fail(e); }
+}
+
+/* ============================== טווחי תאריכים, מסננים וחישוב (משותף ללוח הבקרה ולדוחות) ============================== */
+const PRESETS = [['week', 'השבוע'], ['lastweek', 'שבוע שעבר'], ['month', 'החודש'], ['lastmonth', 'חודש שעבר'], ['custom', 'טווח אחר']];
+
+function presetRange(p, st) {
+  const t = S.today, sow = addDays(t, -weekday(t));
+  const [y, m] = t.split('-').map(Number);
+  const monthStart = (yy, mm) => `${yy}-${String(mm).padStart(2, '0')}-01`;
+  const monthEnd = (yy, mm) => addDays(mm === 12 ? monthStart(yy + 1, 1) : monthStart(yy, mm + 1), -1);
+  if (p === 'week') return [sow, addDays(sow, 6)];
+  if (p === 'lastweek') return [addDays(sow, -7), addDays(sow, -1)];
+  if (p === 'month') return [monthStart(y, m), monthEnd(y, m)];
+  if (p === 'lastmonth') { const yy = m === 1 ? y - 1 : y, mm = m === 1 ? 12 : m - 1; return [monthStart(yy, mm), monthEnd(yy, mm)]; }
+  return [st.from, st.to];
+}
+
+async function loadRange(key) {
+  const st = S[key];
+  if (st.preset !== 'custom') [st.from, st.to] = presetRange(st.preset, st);
+  try { st.data = await call('dashboard', { from: st.from, to: st.to }); (key === 'dash' ? renderDash : renderReports)(); } catch (e) { fail(e); }
+}
+function loadDash() { return loadRange('dash'); }
+
+function rangeHtml(key) {
+  const st = S[key];
+  return `<div class="chips">${PRESETS.map(([k, l]) => `<button class="chip${st.preset === k ? ' on' : ''}" data-a="range-preset" data-k="${key}" data-v="${k}">${l}</button>`).join('')}</div>
+    ${st.preset === 'custom' ? `<div class="row" style="margin-top:10px"><label class="small">מ־</label><input type="date" id="${key}-from" value="${st.from}" style="width:auto"><label class="small">עד</label><input type="date" id="${key}-to" value="${st.to}" style="width:auto"><button class="btn sm pri" data-a="range-custom" data-k="${key}">הצגה</button></div>` : ''}
+    <div class="muted small" style="margin-top:8px">${fmtFull(st.data.from)} – ${fmtFull(st.data.to)}</div>`;
+}
+
+function filtersHtml(key, withStudent) {
+  const st = S[key], d = st.data, f = st.f;
+  const sel = (k, all, options) => `<select data-a="filter" data-s="${key}" data-k="${k}"><option value="">${all}</option>${options}</select>`;
+  return `<div class="filters">
+    ${withStudent ? sel('student', 'כל התלמידות', d.students.slice().sort((a, b) => a.name.localeCompare(b.name, 'he')).map(s => opt(s.id, s.name, f.student)).join('')) : ''}
+    ${sel('className', 'כל הכיתות', uniq(d.students.map(s => s.className)).map(x => opt(x, x, f.className)).join(''))}
+    ${sel('teacher', 'כל המורות', d.teachers.filter(t => t.role !== ROLE_MANAGER).map(t => opt(t.email, t.name, f.teacher)).join(''))}
+    ${sel('subject', 'כל המקצועות', uniq(d.lessons.map(l => l.subject)).map(x => opt(x, x, f.subject)).join(''))}
+  </div>`;
+}
+
+/** מחשב את כל המדדים מתוך רשימת השיעורים בטווח, לפי המסננים. */
+function computeStats(d, f) {
+  const today = d.today;
+  const stuOk = s => (!f.student || s.id === f.student) && (!f.className || s.className === f.className);
+  const lessons = d.lessons.filter(l => (!f.teacher || l.teacherEmail === f.teacher) && (!f.subject || l.subject === f.subject) && l.students.some(stuOk));
+  const studentInfo = {}; d.students.forEach(s => { studentInfo[s.id] = s; });
+  const per = {}, tot = { planned: 0, held: 0, present: 0, absent: 0, notHeld: 0, postponed: 0, missingL: 0, openMakeups: 0 };
+  const lessonReasons = {}, absenceReasons = {}, teachers = {};
+  const missing = [], openMakeups = [];
+  const newRow = s => ({ s, planned: 0, due: 0, held: 0, present: 0, absent: 0, notHeld: 0, postponed: 0, missing: 0, reasons: {}, missingTeachers: {} });
+  d.students.filter(s => s.active !== 'לא' && stuOk(s)).forEach(s => { per[s.id] = newRow(s); });
+  const addReason = (m, r) => { if (r) m[r] = (m[r] || 0) + 1; };
+
+  lessons.forEach(l => {
+    const t = teachers[l.teacherEmail] = teachers[l.teacherEmail] || { name: l.teacherName, planned: 0, due: 0, reported: 0, held: 0, notHeld: 0, postponed: 0, missing: 0 };
+    const sched = l.kind !== 'השלמה';
+    const isMissing = !l.status && l.date < today;
+    if (sched) t.planned++;
+    if (l.status || l.date < today) t.due++;
+    if (l.status) t.reported++;
+    if (isMissing) { t.missing++; tot.missingL++; missing.push(l); }
+    if (l.status === HELD) t.held++;
+    if (l.status === NOT_HELD) { t.notHeld++; addReason(lessonReasons, l.reason); }
+    if (l.status === POSTPONED) {
+      t.postponed++; addReason(lessonReasons, l.reason);
+      if (l.makeupStatus !== HELD && l.makeupStatus !== POSTPONED) { openMakeups.push(l); tot.openMakeups++; }
+    }
+    l.students.filter(stuOk).forEach(s => {
+      const p = per[s.id] || (per[s.id] = newRow(studentInfo[s.id] || s));
+      if (sched) { p.planned++; tot.planned++; if (l.status || l.date < today) p.due++; }
+      if (isMissing) { p.missing++; p.missingTeachers[l.teacherName] = 1; }
+      if (l.status === HELD) {
+        p.held++; tot.held++;
+        if (s.present === false) { p.absent++; tot.absent++; addReason(absenceReasons, s.reason); } else { p.present++; tot.present++; }
+      }
+      if (l.status === NOT_HELD) { p.notHeld++; tot.notHeld++; addReason(p.reasons, l.reason); }
+      if (l.status === POSTPONED) { p.postponed++; tot.postponed++; addReason(p.reasons, l.reason); }
+    });
+  });
+  const rows = Object.values(per).sort((a, b) => {
+    const ra = a.due ? a.present / a.due : 2, rb = b.due ? b.present / b.due : 2;
+    return ra - rb || a.s.name.localeCompare(b.s.name, 'he');
+  });
+  return { lessons, rows, tot, lessonReasons, absenceReasons, stuOk, teachers: Object.values(teachers).sort((a, b) => b.missing - a.missing || a.name.localeCompare(b.name, 'he')), missing, openMakeups };
+}
+
+function barsHtml(map, emptyText) {
+  const e = Object.entries(map).sort((a, b) => b[1] - a[1]);
+  if (!e.length) return `<div class="muted small">${emptyText}</div>`;
+  const max = e[0][1];
+  return '<div class="bars">' + e.map(([k, v]) => `<div class="b"><div class="t">${h(k)}</div><div class="track"><i style="width:${v / max * 100}%"></i></div><b>${v}</b></div>`).join('') + '</div>';
+}
+
+/* ============================== לוח בקרה ============================== */
+function renderDash() {
+  const D = S.dash, d = D.data;
+  const c = computeStats(d, D.f);
+  let html = `<div class="card">${rangeHtml('dash')}${filtersHtml('dash', true)}</div>`;
+
+  const low = c.rows.filter(isLow);
+  if (low.length) {
+    html += `<div class="alert bad"><b>⚠ ${low.length === 1 ? 'תלמידה אחת' : low.length + ' תלמידות'} מתחת ל־${threshold()}% מימוש בתקופה הזו:</b> ` +
+      low.map(r => `<a href="#" class="low-link" data-a="dash-student" data-v="${h(r.s.id)}">${h(r.s.name)} (${Math.round(r.present / r.due * 100)}%)</a>`).join(', ') + '</div>';
+  }
+
+  const T = c.tot;
+  html += `<div class="kpis">
+    <div class="kpi"><div class="v">${T.planned}</div><div class="l">שעות שתוכננו</div></div>
+    <div class="kpi ok"><div class="v">${T.held}</div><div class="l">שעות שהתקיימו</div></div>
+    <div class="kpi ok"><div class="v">${T.present}</div><div class="l">התלמידה נכחה</div></div>
+    <div class="kpi warn"><div class="v">${T.absent}</div><div class="l">התלמידה נעדרה</div></div>
+    <div class="kpi bad"><div class="v">${T.notHeld}</div><div class="l">לא התקיימו</div></div>
+    <div class="kpi info"><div class="v">${T.postponed}</div><div class="l">נדחו</div></div>
+    <div class="kpi bad"><div class="v">${T.missingL}</div><div class="l">דיווחים חסרים</div></div>
+    <div class="kpi info"><div class="v">${T.openMakeups}</div><div class="l">השלמות פתוחות</div></div>
+  </div>`;
+
+  html += `<h3>מימוש לפי תלמידה</h3>
+    <div class="muted small" style="margin-bottom:6px">אחוז המימוש הוא מספר השיעורים שבהם התלמידה נכחה, מתוך השיעורים שכבר היו אמורים להתקיים. התלמידות עם המימוש הנמוך ביותר מופיעות ראשונות. אפשר ללחוץ על שורה כדי לסנן לפיה.</div>
+    <div class="tbl-wrap"><table><thead><tr>
+      <th class="first">תלמידה</th><th>כיתה</th><th class="num">סל שבועי</th><th class="num">משובצות</th><th class="num">תוכננו</th><th class="num">התקיימו</th><th class="num">נכחה</th><th class="num">נעדרה</th><th class="num">לא התקיימו</th><th class="num">נדחו</th><th class="num">לא דווחו</th><th>מימוש</th>
+    </tr></thead><tbody>` +
+    (c.rows.length ? c.rows.map(r => {
+      const s = r.s, mismatch = s.approvedHours && s.scheduledWeekly !== s.approvedHours;
+      return `<tr class="click${isLow(r) ? ' low' : ''}" data-a="dash-student" data-v="${h(s.id)}"><td class="first">${h(s.name)}</td><td>${h(s.className)}</td>
+        <td class="num">${s.approvedHours || '—'}</td><td class="num">${mismatch ? `<span class="badge b-warn" title="מספר השעות המשובצות שונה מהסל שאושר">${s.scheduledWeekly} ⚠</span>` : (s.scheduledWeekly || 0)}</td>
+        <td class="num">${r.planned}</td><td class="num">${r.held}</td><td class="num">${r.present}</td><td class="num">${r.absent || ''}</td><td class="num">${r.notHeld || ''}</td><td class="num">${r.postponed || ''}</td>
+        <td class="num">${r.missing ? `<span class="badge b-bad">${r.missing}</span>` : ''}</td><td>${pctCell(r.present, r.due)}</td></tr>`;
+    }).join('') : '<tr><td colspan="12" class="empty">אין נתונים בטווח הזה</td></tr>') + '</tbody></table></div>';
+
+  html += `<h3>לפי מורה</h3><div class="tbl-wrap"><table><thead><tr>
+      <th class="first">מורה</th><th class="num">שיעורים שתוכננו</th><th class="num">דווחו</th><th class="num">לא דווחו</th><th class="num">התקיימו</th><th class="num">לא התקיימו</th><th class="num">נדחו</th><th>השלמת דיווח</th>
+    </tr></thead><tbody>` +
+    (c.teachers.length ? c.teachers.map(t => `<tr><td class="first">${h(t.name)}</td><td class="num">${t.planned}</td><td class="num">${t.reported}</td>
+      <td class="num">${t.missing ? `<span class="badge b-bad">${t.missing}</span>` : '0'}</td><td class="num">${t.held}</td><td class="num">${t.notHeld || ''}</td><td class="num">${t.postponed || ''}</td><td>${pctCell(t.reported, t.due)}</td></tr>`).join('')
+      : '<tr><td colspan="8" class="empty">אין נתונים</td></tr>') + '</tbody></table></div>';
+
+  html += `<div class="two" style="margin-top:8px">
+    <div><h3>למה שיעורים לא התקיימו או נדחו</h3><div class="card">${barsHtml(c.lessonReasons, 'אין שיעורים שבוטלו או נדחו')}</div></div>
+    <div><h3>סיבות היעדרות של תלמידות</h3><div class="card">${barsHtml(c.absenceReasons, 'אין היעדרויות')}</div></div>
+  </div>`;
+
+  html += `<h3>דיווחים חסרים (${c.missing.length})</h3>` + (c.missing.length
+    ? `<div class="tbl-wrap"><table><thead><tr><th>תאריך</th><th>שעה</th><th>מורה</th><th>מקצוע</th><th>תלמידות</th></tr></thead><tbody>` +
+      c.missing.map(l => `<tr><td>${fmtDate(l.date)}</td><td>${h(l.time)}</td><td>${h(l.teacherName)}</td><td>${h(l.subject)}</td><td>${h(studentsText(l.students))}</td></tr>`).join('') + '</tbody></table></div>'
+    : '<div class="card muted">כל השיעורים דווחו 👍</div>');
+
+  html += `<h3>השלמות פתוחות (${c.openMakeups.length})</h3>` + (c.openMakeups.length
+    ? `<div class="tbl-wrap"><table><thead><tr><th>שיעור מקורי</th><th>מורה</th><th>מקצוע</th><th>תלמידות</th><th>מצב ההשלמה</th></tr></thead><tbody>` +
+      c.openMakeups.map(l => `<tr><td>${fmtDate(l.date)}</td><td>${h(l.teacherName)}</td><td>${h(l.subject)}</td><td>${h(studentsText(l.students))}</td>
+        <td>${!l.makeupDate ? '<span class="badge b-warn">לא נקבע מועד</span>' : l.makeupStatus === NOT_HELD ? '<span class="badge b-bad">ההשלמה לא התקיימה</span>' : `<span class="badge b-info">נקבעה ל${fmtDate(l.makeupDate)}</span>`}</td></tr>`).join('') + '</tbody></table></div>'
+    : '<div class="card muted">אין השלמות פתוחות</div>');
+
+  html += `<details class="card" style="margin-top:16px"><summary>פירוט כל השיעורים בטווח (${c.lessons.length})</summary><div class="tbl-wrap" style="margin-top:8px"><table><thead><tr><th>תאריך</th><th>שעה</th><th>מורה</th><th>מקצוע</th><th>תלמידות</th><th>מצב</th><th>נושא / סיבה</th></tr></thead><tbody>` +
+    c.lessons.map(l => { const st = statusInfo(l); return `<tr><td>${fmtDate(l.date)}</td><td>${h(l.time)}</td><td>${h(l.teacherName)}</td><td>${h(l.subject)}${l.kind === 'השלמה' ? ' <span class="tag">השלמה</span>' : ''}</td><td>${h(studentsText(l.students))}</td><td><span class="badge b-${st.cls}">${h(st.text)}</span></td><td style="white-space:normal;min-width:180px">${h(l.topic || (l.reason ? l.reason + (l.reasonText ? ' – ' + l.reasonText : '') : ''))}</td></tr>`; }).join('') +
+    '</tbody></table></div></details>';
+
+  document.getElementById('app').innerHTML = html;
+}
+
+/* ============================== דוחות ============================== */
+function loadReports() { return loadRange('rep'); }
+
+function reasonsText(m) { return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([k, v]) => v > 1 ? `${k} (${v})` : k).join('; '); }
+function pctText(n, d) { return d ? Math.min(100, Math.round(n / d * 100)) + '%' : '—'; }
+function withText(r, t) { return r ? r + (t ? ' – ' + t : '') : ''; }
+
+/** בונה את טבלאות הדוח כמערכים – משמשות גם לתצוגה/הדפסה וגם לייצוא. */
+function reportTables(c, d) {
+  const T = {};
+  T.students = {
+    name: 'לפי תלמידה',
+    head: ['תלמידה', 'כיתה', 'סל שבועי', 'תוכננו', 'התקיימו', 'נכחה', 'נעדרה', 'לא התקיימו', 'נדחו', 'סיבות ביטול / דחייה', 'לא דווחו', 'מורות שטרם דיווחו', 'מימוש'],
+    rows: c.rows.slice().sort((a, b) => a.s.className.localeCompare(b.s.className, 'he') || a.s.name.localeCompare(b.s.name, 'he')).map(r => [
+      r.s.name, r.s.className, r.s.approvedHours || 0, r.planned, r.held, r.present, r.absent, r.notHeld, r.postponed,
+      reasonsText(r.reasons), r.missing, Object.keys(r.missingTeachers).join(', '), pctText(r.present, r.due)]),
+  };
+  T.teachers = {
+    name: 'לפי מורה',
+    head: ['מורה', 'שיעורים שתוכננו', 'דווחו', 'לא דווחו', 'התקיימו', 'לא התקיימו', 'נדחו', 'השלמת דיווח'],
+    rows: c.teachers.slice().sort((a, b) => a.name.localeCompare(b.name, 'he')).map(t => [t.name, t.planned, t.reported, t.missing, t.held, t.notHeld, t.postponed, pctText(t.reported, t.due)]),
+  };
+  T.missing = {
+    name: 'דיווחים חסרים',
+    head: ['מורה', 'תאריך', 'יום', 'שעה', 'מקצוע', 'תלמידות'],
+    rows: c.missing.slice().sort((a, b) => a.teacherName.localeCompare(b.teacherName, 'he') || (a.date < b.date ? -1 : 1))
+      .map(l => [l.teacherName, fmtFull(l.date), DAY_LETTERS[weekday(l.date)], l.time, l.subject, studentsText(l.students)]),
+  };
+  T.lessons = {
+    name: 'פירוט שיעורים',
+    head: ['תאריך', 'יום', 'שעה', 'מורה', 'מקצוע', 'סוג', 'תלמידה', 'כיתה', 'מצב השיעור', 'נוכחות', 'סיבה', 'נושא השיעור', 'הערה'],
+    rows: [],
+  };
+  c.lessons.forEach(l => l.students.filter(c.stuOk).forEach(s => {
+    const st = !l.status ? (l.date < d.today ? 'טרם דווח' : 'מתוכנן') : l.status === POSTPONED && l.makeupDate ? 'נדחה ל' + fmtFull(l.makeupDate) : l.status;
+    const att = l.status === HELD ? (s.present === false ? 'נעדרה' : 'נכחה') : '';
+    const reason = l.status === HELD ? (s.present === false ? withText(s.reason, s.reasonText) : '') : withText(l.reason, l.reasonText);
+    T.lessons.rows.push([fmtFull(l.date), DAY_LETTERS[weekday(l.date)], l.time, l.teacherName, l.subject, l.kind === 'השלמה' ? 'השלמה' : (l.students.length > 1 ? 'קבוצתי' : 'פרטני'),
+      s.name, s.className, st, att, reason, l.topic, l.note]);
+  }));
+  return T;
+}
+
+function tableHtml(t, numCols) {
+  if (!t.rows.length) return '<div class="card muted">אין נתונים</div>';
+  const isNum = i => numCols && numCols.includes(i);
+  return `<div class="tbl-wrap"><table><thead><tr>${t.head.map((x, i) => `<th${isNum(i) ? ' class="num"' : ''}>${h(x)}</th>`).join('')}</tr></thead><tbody>` +
+    t.rows.map(r => `<tr>${r.map((v, i) => `<td${isNum(i) ? ' class="num"' : ''}${typeof v === 'string' && v.length > 25 ? ' style="white-space:normal;min-width:160px"' : ''}>${v === 0 && isNum(i) ? '<span class="muted">0</span>' : h(v)}</td>`).join('')}</tr>`).join('') +
+    '</tbody></table></div>';
+}
+
+function reportModel() {
+  const R = S.rep, d = R.data;
+  const f = Object.assign({}, R.f, R.view === 'student' ? { student: R.student } : {});
+  const c = computeStats(d, f);
+  const T = reportTables(c, d);
+  const period = `${fmtFull(d.from)} – ${fmtFull(d.to)}`;
+  const filt = [R.f.className && 'כיתה ' + R.f.className, R.f.teacher && (d.teachers.find(t => t.email === R.f.teacher) || {}).name, R.f.subject].filter(Boolean).join(' · ');
+  let title, sheets;
+  if (R.view === 'students') { title = 'דוח מימוש שעות סל אישי – לפי תלמידה'; sheets = [T.students, T.teachers, T.missing, T.lessons]; }
+  else if (R.view === 'teachers') { title = 'דוח דיווחי מורות'; sheets = [T.teachers, T.missing, T.students, T.lessons]; }
+  else { const s = d.students.find(x => x.id === R.student); title = 'דוח שעות סל אישי – ' + (s ? s.name : ''); sheets = [T.students, T.lessons]; }
+  return { c, T, title, period, filt, sheets };
+}
+
+function renderReports() {
+  const R = S.rep, d = R.data;
+  const views = [['students', 'סיכום לפי תלמידה'], ['teachers', 'דיווחי מורות'], ['student', 'דוח לתלמידה']];
+  if (R.view === 'student' && !R.student) {
+    const first = d.students.filter(s => s.active !== 'לא').sort((a, b) => a.name.localeCompare(b.name, 'he'))[0];
+    R.student = first ? first.id : '';
+  }
+  const M = reportModel(), T = M.T;
+  let html = `<div class="card no-print">
+    <div class="chips" style="margin-bottom:10px">${views.map(([k, l]) => `<button class="chip${R.view === k ? ' on' : ''}" data-a="rep-view" data-v="${k}">${l}</button>`).join('')}</div>
+    ${R.view === 'student' ? `<select data-a="rep-student" style="margin-bottom:10px">${d.students.slice().sort((a, b) => a.name.localeCompare(b.name, 'he')).map(s => opt(s.id, s.name + (s.className ? ' – ' + s.className : ''), R.student)).join('')}</select>` : ''}
+    ${rangeHtml('rep')}${R.view === 'student' ? '' : filtersHtml('rep', false)}
+    <div class="row" style="margin-top:12px">
+      <button class="btn pri" data-a="rep-print">🖨️ הדפסה</button>
+      <button class="btn" data-a="rep-xlsx">⬇️ ייצוא לאקסל</button>
+      <button class="btn" data-a="rep-gsheet">פתיחה כגיליון Google</button>
+    </div>
+    <div class="muted small" style="margin-top:6px">קובץ האקסל כולל את כל הטבלאות של הדוח בלשוניות נפרדות. אם ההורדה לא מתחילה, אפשר לבחור "פתיחה כגיליון Google" ומשם להוריד כאקסל.</div>
+  </div>`;
+
+  html += `<div class="report"><div class="report-head"><h2>${h(M.title)}</h2>
+    <div class="muted small">תקופה: ${M.period}${M.filt ? ' · ' + h(M.filt) : ''} · הופק ב־${fmtFull(S.today)}</div></div>`;
+
+  const sum = M.c.tot;
+  const sumLine = `<div class="kpis report-kpis">
+      <div class="kpi"><div class="v">${sum.planned}</div><div class="l">שעות שתוכננו</div></div>
+      <div class="kpi ok"><div class="v">${sum.held}</div><div class="l">התקיימו</div></div>
+      <div class="kpi ok"><div class="v">${sum.present}</div><div class="l">נכחה</div></div>
+      <div class="kpi warn"><div class="v">${sum.absent}</div><div class="l">נעדרה</div></div>
+      <div class="kpi bad"><div class="v">${sum.notHeld}</div><div class="l">לא התקיימו</div></div>
+      <div class="kpi info"><div class="v">${sum.postponed}</div><div class="l">נדחו</div></div>
+      <div class="kpi bad"><div class="v">${sum.missingL}</div><div class="l">לא דווחו</div></div>
+    </div>`;
+
+  if (R.view === 'students') {
+    html += sumLine + `<h3>סיכום לפי תלמידה</h3>` + tableHtml(T.students, [2, 3, 4, 5, 6, 7, 8, 10]);
+    html += `<h3>מורות – השלמת דיווח</h3>` + tableHtml(T.teachers, [1, 2, 3, 4, 5, 6]);
+  } else if (R.view === 'teachers') {
+    html += `<h3>סיכום לפי מורה</h3>` + tableHtml(T.teachers, [1, 2, 3, 4, 5, 6]);
+    html += `<h3>שיעורים שטרם דווחו (${T.missing.rows.length})</h3>` + (T.missing.rows.length ? tableHtml(T.missing) : '<div class="card muted">כל השיעורים המתוכננים דווחו 👍</div>');
+  } else {
+    const s = d.students.find(x => x.id === R.student);
+    if (s) {
+      const r = M.c.rows.find(x => x.s.id === s.id);
+      html += `<div class="card"><b>${h(s.name)}</b> · כיתה ${h(s.className)} · סל שבועי: ${s.approvedHours} שעות · משובצות כרגע: ${s.scheduledWeekly}
+        ${r ? `<div style="margin-top:6px">מימוש בתקופה: <b>${pctText(r.present, r.due)}</b> (נכחה ב־${r.present} מתוך ${r.due} שיעורים שהיו אמורים להתקיים)</div>` : ''}
+        ${r && Object.keys(r.reasons).length ? `<div class="small" style="margin-top:4px">סיבות ביטול / דחייה: ${h(reasonsText(r.reasons))}</div>` : ''}
+        ${r && r.missing ? `<div class="small" style="margin-top:4px;color:var(--bad)">לא דווחו ${r.missing} שיעורים (${h(Object.keys(r.missingTeachers).join(', '))})</div>` : ''}</div>`;
+      html += sumLine;
+      html += `<h3>פירוט השיעורים</h3>` + tableHtml({ head: T.lessons.head.filter((_, i) => i !== 6 && i !== 7), rows: T.lessons.rows.map(row => row.filter((_, i) => i !== 6 && i !== 7)) });
+    }
+  }
+  html += '</div>';
+  document.getElementById('app').innerHTML = html;
+}
+
+/* ---------- ייצוא ---------- */
+function loadXlsxLib() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('טעינת רכיב האקסל נכשלה. אפשר להשתמש ב"פתיחה כגיליון Google".'));
+    document.head.appendChild(s);
+  });
+}
+
+function sheetName(n) { return n.replace(/[\\\/\?\*\[\]:]/g, ' ').slice(0, 31); }
+
+async function exportXlsx() {
+  const M = reportModel(), d = S.rep.data;
+  try {
+    setBusy(1);
+    await loadXlsxLib();
+    const wb = XLSX.utils.book_new();
+    M.sheets.forEach(t => {
+      const ws = XLSX.utils.aoa_to_sheet([t.head].concat(t.rows));
+      ws['!cols'] = t.head.map((x, i) => ({ wch: Math.min(45, Math.max(String(x).length, ...t.rows.map(r => String(r[i] == null ? '' : r[i]).length)) + 2) }));
+      XLSX.utils.book_append_sheet(wb, ws, sheetName(t.name));
+    });
+    wb.Workbook = { Views: [{ RTL: true }] };
+    XLSX.writeFile(wb, `${M.title.replace(/[\\\/:*?"<>|]/g, '')} ${d.from} עד ${d.to}.xlsx`);
+    toast('הקובץ ירד ✓');
+  } catch (e) { fail(e); } finally { setBusy(-1); }
+}
+
+async function exportGSheet() {
+  const M = reportModel(), d = S.rep.data;
+  const win = window.open('', '_blank');
+  try {
+    const r = await call('exportSheet', { title: `${M.title} ${fmtFull(d.from)}–${fmtFull(d.to)}`, sheets: M.sheets.map(t => ({ name: sheetName(t.name), rows: [t.head].concat(t.rows) })) });
+    if (win) win.location.href = r.url;
+    else openModal(`<h3>הגיליון מוכן</h3><p><a href="${h(r.url)}" target="_blank">לחצי כאן לפתיחת הגיליון</a></p><div class="form-actions"><button class="btn" data-a="modal-close">סגירה</button></div>`);
+  } catch (e) { if (win) win.close(); fail(e); }
+}
+
+/* ============================== מערכת שעות ============================== */
+async function loadSched() {
+  try { S.sched.data = await call('schedule', { date: S.sched.date || S.today }); renderSched(); } catch (e) { fail(e); }
+}
+
+function renderSched() {
+  const d = S.sched.data, f = S.sched.f, B = S.boot;
+  const stu = {}; d.students.forEach(s => { stu[s.id] = s; });
+  const tName = {}; d.teachers.forEach(t => { tName[t.email] = t.name; });
+  const classes = uniq(d.students.map(s => s.className));
+  const slots = d.slots.filter(s => {
+    const ids = s.studentIds.split(',');
+    return (!f.teacher || s.teacherEmail === f.teacher) && (!f.day || s.day === f.day) &&
+      (!f.student || ids.includes(f.student)) && (!f.className || ids.some(id => stu[id] && stu[id].className === f.className));
+  });
+  let html = '';
+  if (canView()) {
+    html += `<div class="card"><div class="filters" style="margin-top:0">
+      <select data-a="sched-filter" data-k="student"><option value="">כל התלמידות</option>${d.students.filter(s => s.active !== 'לא').sort((a, b) => a.name.localeCompare(b.name, 'he')).map(s => opt(s.id, s.name, f.student)).join('')}</select>
+      <select data-a="sched-filter" data-k="className"><option value="">כל הכיתות</option>${classes.map(x => opt(x, x, f.className)).join('')}</select>
+      <select data-a="sched-filter" data-k="teacher"><option value="">כל המורות</option>${d.teachers.filter(t => t.role !== ROLE_MANAGER).map(t => opt(t.email, t.name, f.teacher)).join('')}</select>
+      <select data-a="sched-filter" data-k="day"><option value="">כל הימים</option>${B.days.map(x => opt(x, 'יום ' + x, f.day)).join('')}</select>
+    </div>${isCoord() ? '<div class="row" style="margin-top:10px"><button class="btn pri sm" data-a="slot-new">+ שיבוץ חדש</button></div>' : ''}</div>`;
+  }
+  if (f.student && stu[f.student]) {
+    const s = stu[f.student], n = slots.filter(x => !x.validFrom || x.validFrom <= S.today).length;
+    html += `<div class="alert ${s.approvedHours && n !== s.approvedHours ? 'warn' : ''}" style="background:${s.approvedHours && n !== s.approvedHours ? '' : 'var(--pri-weak)'}"><b>${h(s.name)}</b> · כיתה ${h(s.className)} · סל שבועי: ${s.approvedHours} שעות · משובצות כרגע: ${n}${s.approvedHours && n !== s.approvedHours ? ' ⚠ יש פער' : ''}</div>`;
+  }
+  const byDay = B.days.map(day => [day, slots.filter(s => s.day === day).sort((a, b) => a.time < b.time ? -1 : 1)]).filter(x => x[1].length);
+  if (!byDay.length) html += '<div class="empty">אין שיבוצים להצגה</div>';
+  html += byDay.map(([day, list]) => `<div class="daycol"><h4>יום ${h(day)}</h4>` + list.map(s => {
+    const ids = s.studentIds.split(',');
+    return `<div class="card slot"><div class="lesson-time">${h(s.time)}</div><div class="grow">
+      <div class="lesson-subj">${h(s.subject)}${ids.length > 1 ? '<span class="tag">קבוצתי</span>' : ''}${s.validFrom > S.today ? `<span class="tag">החל מ${fmtFull(s.validFrom)}</span>` : ''}${s.validTo ? `<span class="tag">עד ${fmtFull(s.validTo)}</span>` : ''}</div>
+      <div class="lesson-studs">${h(studentsText(ids.map(id => stu[id] || { name: '?' })))}</div>
+      <div class="muted small">${h(tName[s.teacherEmail] || s.teacherEmail)}</div></div>
+      ${isCoord() ? `<button class="btn sm" data-a="slot-edit" data-v="${h(s.id)}">עריכה</button>` : ''}</div>`;
+  }).join('') + '</div>').join('');
+  document.getElementById('app').innerHTML = html;
+}
+
+/* ============================== ניהול ============================== */
+async function loadAdmin() {
+  S.admin.history = null;
+  try { S.admin.data = await call('adminData'); renderAdmin(); } catch (e) { fail(e); }
+}
+async function loadHistory() {
+  try { S.admin.history = await call('history'); if (S.tab === 'admin' && S.admin.sub === 'history') renderAdmin(); } catch (e) { fail(e); }
+}
+
+function slotActiveToday(s) { return (!s.validFrom || s.validFrom <= S.today) && (!s.validTo || s.validTo >= S.today); }
+
+function renderAdmin() {
+  const A = S.admin, d = A.data;
+  const subs = [['students', 'תלמידות'], ['slots', 'שיבוצים'], ['users', 'מורות ומשתמשים'], ['holidays', 'חופשות'], ['history', 'יומן שינויים'], ['settings', 'הגדרות']];
+  let html = `<div class="subtabs">${subs.map(([k, l]) => `<button class="chip${A.sub === k ? ' on' : ''}" data-a="admin-sub" data-v="${k}">${l}</button>`).join('')}</div>`;
+  const tName = {}; d.users.forEach(u => { tName[u.email.toLowerCase()] = u.name; });
+  const stu = {}; d.students.forEach(s => { stu[s.id] = s; });
+
+  if (A.sub === 'students') {
+    const weekly = {};
+    d.slots.filter(slotActiveToday).forEach(s => s.studentIds.split(',').forEach(id => { weekly[id] = (weekly[id] || 0) + 1; }));
+    html += `<div class="row" style="margin-bottom:10px"><button class="btn pri" data-a="student-new">+ תלמידה חדשה</button></div>`;
+    const list = d.students.slice().sort((a, b) => (a.active === 'לא') - (b.active === 'לא') || a.className.localeCompare(b.className, 'he') || a.name.localeCompare(b.name, 'he'));
+    html += list.length ? list.map(s => {
+      const n = weekly[s.id] || 0, mis = s.approvedHours && n !== s.approvedHours;
+      const mySlots = d.slots.filter(x => slotActiveToday(x) && x.studentIds.split(',').includes(s.id));
+      return `<div class="card${s.active === 'לא' ? ' dim' : ''}"><div class="list-item"><div class="grow">
+        <b>${h(s.name)}</b> <span class="muted">· ${h(s.className)}</span>${s.active === 'לא' ? ' <span class="tag">לא פעילה</span>' : ''}
+        <div class="small" style="margin-top:4px">סל שבועי: <b>${s.approvedHours}</b> · משובצות: <b>${n}</b> ${mis ? '<span class="badge b-warn">יש פער בין הסל לשיבוץ</span>' : ''}</div>
+        ${mySlots.length ? `<div class="small muted" style="margin-top:4px">${mySlots.map(x => `${h(x.subject)} – ${h(tName[x.teacherEmail] || x.teacherEmail)} (יום ${h(x.day)} ${h(x.time)})`).join('<br>')}</div>` : ''}
+        ${s.notes ? `<div class="small" style="margin-top:4px">📝 ${h(s.notes)}</div>` : ''}
+      </div><button class="btn sm" data-a="student-edit" data-v="${h(s.id)}">עריכה</button></div></div>`;
+    }).join('') : '<div class="empty">עדיין אין תלמידות. אפשר להתחיל בהוספת תלמידה.</div>';
+  }
+
+  if (A.sub === 'slots') {
+    const list = d.slots.filter(s => A.showEnded || !s.validTo || s.validTo >= S.today)
+      .sort((a, b) => (tName[a.teacherEmail] || '').localeCompare(tName[b.teacherEmail] || '', 'he') || S.boot.days.indexOf(a.day) - S.boot.days.indexOf(b.day) || (a.time < b.time ? -1 : 1));
+    html += `<div class="row" style="margin-bottom:10px"><button class="btn pri" data-a="slot-new">+ שיבוץ חדש</button>
+      <label class="small row" style="gap:4px"><input type="checkbox" data-a="admin-ended"${A.showEnded ? ' checked' : ''}> הצגת שיבוצים שהסתיימו</label></div>
+      <div class="muted small" style="margin-bottom:8px">כל שיבוץ הוא מפגש שבועי קבוע. בשיעור קבוצתי בוחרים כמה תלמידות באותו שיבוץ.</div>`;
+    html += list.length ? `<div class="tbl-wrap"><table><thead><tr><th>מורה</th><th>מקצוע</th><th>יום</th><th>שעה</th><th>תלמידות</th><th>תוקף</th><th></th></tr></thead><tbody>` +
+      list.map(s => `<tr class="${s.validTo && s.validTo < S.today ? 'dim' : ''}"><td>${h(tName[s.teacherEmail] || s.teacherEmail)}</td><td>${h(s.subject)}</td><td>${h(s.day)}</td><td>${h(s.time)}</td>
+        <td style="white-space:normal">${h(s.studentIds.split(',').map(id => stu[id] ? stu[id].name : '?').join(', '))}</td>
+        <td class="small">${s.validFrom ? 'מ' + fmtFull(s.validFrom) : ''}${s.validTo ? ' עד ' + fmtFull(s.validTo) : ''}</td>
+        <td><button class="btn sm" data-a="slot-edit" data-v="${h(s.id)}">עריכה</button></td></tr>`).join('') + '</tbody></table></div>'
+      : '<div class="empty">אין שיבוצים</div>';
+  }
+
+  if (A.sub === 'users') {
+    html += `<div class="row" style="margin-bottom:10px"><button class="btn pri" data-a="user-new">+ משתמשת חדשה</button></div>
+      <div class="muted small" style="margin-bottom:8px">רק כתובות מייל שרשומות כאן יכולות להיכנס למערכת. <b>מורה</b> רואה ומדווחת רק על השיעורים שלה. <b>הנהלה</b> צופה בלוח הבקרה ובמערכת השעות. <b>רכזת</b> יכולה לנהל הכול.</div>`;
+    html += d.users.slice().sort((a, b) => a.name.localeCompare(b.name, 'he')).map(u => `<div class="card${u.active === 'לא' ? ' dim' : ''}"><div class="list-item"><div class="grow">
+        <b>${h(u.name)}</b> <span class="tag">${h(u.role)}</span>${u.active === 'לא' ? '<span class="tag">לא פעילה</span>' : ''}
+        <div class="small muted" dir="ltr" style="text-align:right">${h(u.email)}</div></div>
+        <button class="btn sm" data-a="user-edit" data-v="${h(u.email)}">עריכה</button></div></div>`).join('');
+  }
+
+  if (A.sub === 'holidays') {
+    html += `<div class="card"><b>הוספת חופשה / יום ללא לימודים</b>
+      <div class="row" style="margin-top:8px"><div class="grow"><label class="f">מתאריך</label><input type="date" id="hol-from"></div><div class="grow"><label class="f">עד תאריך (לא חובה)</label><input type="date" id="hol-to"></div></div>
+      <label class="f">תיאור</label><input type="text" id="hol-desc" placeholder="לדוגמה: חופשת חנוכה">
+      <div class="form-actions"><button class="btn pri" data-a="hol-add">הוספה</button></div>
+      <div class="muted small" style="margin-top:6px">בימים האלה לא ייווצרו שיעורים, והם לא ייחשבו כשיעורים שלא התקיימו.</div></div>`;
+    html += d.holidays.length ? d.holidays.map(x => `<div class="card list-item${(x.to || x.from) < S.today ? ' dim' : ''}"><div class="grow"><b>${h(x.description || 'חופשה')}</b>
+        <div class="small muted">${fmtFull(x.from)}${x.to && x.to !== x.from ? ' – ' + fmtFull(x.to) : ''}</div></div>
+        <button class="btn sm danger" data-a="hol-del" data-v="${h(x.id)}">מחיקה</button></div>`).join('') : '<div class="empty">לא הוגדרו חופשות</div>';
+  }
+
+  if (A.sub === 'settings') {
+    const s = d.settings, hours = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
+    html += `<div class="card"><b>תזכורות במייל למורות</b>
+      <label class="row" style="margin-top:12px;gap:8px;font-size:16px"><input type="checkbox" id="set-on"${s.remindersOn ? ' checked' : ''} style="width:20px;height:20px"> לשלוח לכל מורה תזכורת יום לפני השיעורים שלה</label>
+      <div class="row" style="margin-top:6px">
+        <div class="grow"><label class="f">שעת שליחה בימים א׳–ה׳</label><select id="set-hour">${hours(8, 21).map(x => opt(x, String(x).padStart(2, '0') + ':00', s.reminderHour)).join('')}</select></div>
+        <div class="grow"><label class="f">ביום שישי (לשיעורי יום ראשון)</label><select id="set-fri">${hours(7, 12).map(x => opt(x, String(x).padStart(2, '0') + ':00', s.fridayHour)).join('')}</select></div>
+      </div>
+      <div class="muted small" style="margin-top:8px">התזכורת כוללת את רשימת השיעורים של היום הבא, קישור לדיווח, וציון של שיעורים שעדיין לא דווחו. בשבת לא נשלחות תזכורות, והתזכורת לשיעורי יום ראשון נשלחת ביום שישי. בחופשות לא נשלח דבר.</div>
+      <div class="form-actions"><button class="btn" data-a="set-test">שליחת תזכורת לדוגמה אליי</button></div>
+    </div>
+    <div class="card"><b>סיכום שבועי לרכזת</b>
+      <label class="row" style="margin-top:12px;gap:8px;font-size:16px"><input type="checkbox" id="set-weekly"${s.weeklyOn ? ' checked' : ''} style="width:20px;height:20px"> לשלוח כל יום ראשון בבוקר סיכום של השבוע שעבר</label>
+      <div class="row" style="margin-top:6px">
+        <div class="grow"><label class="f">שעת שליחה ביום ראשון</label><select id="set-whour">${hours(7, 12).map(x => opt(x, String(x).padStart(2, '0') + ':00', s.weeklyHour)).join('')}</select></div>
+        <label class="row grow" style="gap:8px;margin-top:22px"><input type="checkbox" id="set-wmgr"${s.weeklyToManagers ? ' checked' : ''} style="width:18px;height:18px"> לשלוח גם להנהלה</label>
+      </div>
+      <div class="muted small" style="margin-top:8px">הסיכום כולל את המימוש של כל תלמידה (עם סימון אדום לתלמידות מתחת לסף), דיווחים חסרים לפי מורה, והשלמות פתוחות.</div>
+      <div class="form-actions"><button class="btn" data-a="set-test-weekly">שליחת סיכום לדוגמה אליי</button></div>
+    </div>
+    <div class="card"><b>סף התראה על מימוש נמוך</b>
+      <div class="row" style="margin-top:8px"><input type="number" id="set-thr" min="10" max="100" step="5" value="${s.lowThreshold}" style="width:90px"> <span>%</span></div>
+      <div class="muted small" style="margin-top:6px">תלמידה שאחוז המימוש שלה (נכחה מתוך השיעורים שתוכננו) נמוך מהסף תסומן באדום בלוח הבקרה ובסיכום השבועי. ההתראה מופיעה רק אחרי לפחות 3 שיעורים בתקופה, כדי שלא תהיה התראה מיותרת בתחילת שבוע.</div>
+    </div>
+    <div class="form-actions"><button class="btn pri" data-a="set-save">שמירת כל ההגדרות</button></div>`;
+  }
+
+  if (A.sub === 'history') {
+    if (!A.history) { html += '<div class="empty">טוען…</div>'; loadHistory(); }
+    else {
+      const list = A.history.filter(x => !A.histTeacher || x.teacherEmail === A.histTeacher);
+      html += `<div class="card"><div class="muted small" style="margin-bottom:8px">כל דיווח חדש וכל שינוי בדיווח קיים נרשמים כאן אוטומטית, כולל מה היה לפני השינוי. מוצגים 500 השינויים האחרונים, והיומן המלא נשמר בגיליון בלשונית "יומן שינויים".</div>
+        <select data-a="hist-teacher"><option value="">כל המורות</option>${d.users.filter(u => u.role !== ROLE_MANAGER).map(u => opt(u.email.toLowerCase(), u.name, A.histTeacher)).join('')}</select></div>`;
+      html += list.length ? list.map(x => `<div class="card hist${x.before ? ' changed' : ''}">
+          <div class="row"><b class="grow">${fmtDate(x.date)} · ${h(x.subject)} · ${h(x.teacherName)}</b><span class="badge ${x.before ? 'b-warn' : 'b-pending'}">${h(x.action)}</span></div>
+          <div class="muted small" style="margin-top:2px">${h(fmtStamp(x.at))} · ${h(x.byName)}</div>
+          ${x.before ? `<div class="hist-line before"><span>לפני:</span> ${h(x.before)}</div>` : ''}
+          <div class="hist-line"><span>${x.before ? 'אחרי:' : 'דיווח:'}</span> ${h(x.after)}</div>
+        </div>`).join('') : '<div class="empty">אין עדיין שינויים</div>';
+    }
+  }
+  document.getElementById('app').innerHTML = html;
+}
+
+/* ---------- חלונות עריכה ---------- */
+function openModal(html) { document.getElementById('modal-box').innerHTML = html; document.getElementById('modal').classList.remove('hidden'); }
+function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+function askConfirm(text, action, v) {
+  openModal(`<h3>אישור</h3><p>${h(text)}</p><div class="form-actions"><button class="btn pri" data-a="${action}" data-v="${h(v)}">כן</button><button class="btn" data-a="modal-close">ביטול</button></div>`);
+}
+function val(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+
+function studentModal(s) {
+  s = s || { id: '', name: '', className: '', approvedHours: '', active: 'כן', notes: '' };
+  openModal(`<h3>${s.id ? 'עריכת תלמידה' : 'תלמידה חדשה'}</h3>
+    <label class="f">שם מלא</label><input type="text" id="m-name" value="${h(s.name)}">
+    <div class="row"><div class="grow"><label class="f">כיתה</label><input type="text" id="m-class" value="${h(s.className)}" placeholder="לדוגמה: ט2"></div>
+    <div class="grow"><label class="f">שעות סל שבועיות</label><input type="number" min="0" step="1" id="m-hours" value="${h(s.approvedHours)}"></div></div>
+    <label class="f">הערות</label><textarea id="m-notes">${h(s.notes)}</textarea>
+    <label class="f">סטטוס</label><select id="m-active">${opt('כן', 'פעילה', s.active)}${opt('לא', 'לא פעילה (עזבה / סיימה)', s.active)}</select>
+    <div class="form-actions"><button class="btn pri" data-a="student-save" data-v="${h(s.id)}">שמירה</button><button class="btn" data-a="modal-close">ביטול</button></div>`);
+}
+
+function userModal(u) {
+  u = u || { email: '', name: '', role: ROLE_TEACHER, active: 'כן' };
+  openModal(`<h3>${u.email ? 'עריכת משתמשת' : 'משתמשת חדשה'}</h3>
+    <label class="f">שם</label><input type="text" id="m-name" value="${h(u.name)}">
+    <label class="f">כתובת מייל (משמשת לכניסה)</label><input type="email" id="m-email" dir="ltr" value="${h(u.email)}">
+    <label class="f">תפקיד</label><select id="m-role">${[ROLE_TEACHER, ROLE_COORD, ROLE_MANAGER].map(r => opt(r, r, u.role)).join('')}</select>
+    <label class="f">סטטוס</label><select id="m-active">${opt('כן', 'פעילה', u.active)}${opt('לא', 'לא פעילה (אין כניסה)', u.active)}</select>
+    <div class="form-actions"><button class="btn pri" data-a="user-save" data-v="${h(u.email)}">שמירה</button><button class="btn" data-a="modal-close">ביטול</button></div>`);
+}
+
+async function slotModal(slotId) {
+  let d = S.admin.data;
+  if (!d) { try { d = S.admin.data = await call('adminData'); } catch (e) { return fail(e); } }
+  const s = slotId ? d.slots.find(x => x.id === slotId) : null;
+  const v = s || { id: '', teacherEmail: '', subject: '', day: '', time: '', studentIds: '', validFrom: S.today, validTo: '' };
+  const chosen = v.studentIds ? v.studentIds.split(',') : [];
+  const subjects = uniq(d.slots.map(x => x.subject));
+  const students = d.students.filter(x => x.active !== 'לא' || chosen.includes(x.id)).sort((a, b) => a.className.localeCompare(b.className, 'he') || a.name.localeCompare(b.name, 'he'));
+  openModal(`<h3>${s ? 'עריכת שיבוץ' : 'שיבוץ חדש'}</h3>
+    <label class="f">מורה</label><select id="m-teacher"><option value="">בחרי מורה…</option>${d.users.filter(u => u.active !== 'לא' && u.role !== ROLE_MANAGER).map(u => opt(u.email.toLowerCase(), u.name, v.teacherEmail)).join('')}</select>
+    <label class="f">מקצוע</label><input type="text" id="m-subject" list="subj-list" value="${h(v.subject)}"><datalist id="subj-list">${subjects.map(x => `<option value="${h(x)}">`).join('')}</datalist>
+    <div class="row"><div class="grow"><label class="f">יום</label><select id="m-day"><option value="">בחרי…</option>${S.boot.days.map(x => opt(x, x, v.day)).join('')}</select></div>
+    <div class="grow"><label class="f">שעה</label><input type="time" id="m-time" value="${h(v.time)}"></div></div>
+    <label class="f">תלמידות (אפשר לבחור כמה לשיעור קבוצתי)</label>
+    <div class="checks">${students.map(x => `<label><input type="checkbox" class="m-stu" value="${h(x.id)}"${chosen.includes(x.id) ? ' checked' : ''}> ${h(x.name)} <span class="muted small">${h(x.className)}</span></label>`).join('') || '<div class="muted small">יש להוסיף תלמידות קודם</div>'}</div>
+    ${s ? `<label class="f">השינוי בתוקף מתאריך</label><input type="date" id="m-eff" value="${S.today}">
+           <div class="muted small">שיעורים שדווחו לפני התאריך הזה יישארו כפי שהם.</div>`
+        : `<label class="f">בתוקף מתאריך</label><input type="date" id="m-from" value="${h(v.validFrom)}">`}
+    <label class="f">בתוקף עד תאריך (לא חובה)</label><input type="date" id="m-to" value="${h(v.validTo)}">
+    <div class="form-actions"><button class="btn pri" data-a="slot-save" data-v="${h(v.id)}">שמירה</button><button class="btn" data-a="modal-close">ביטול</button></div>
+    ${s ? `<button class="btn ghost danger" style="margin-top:8px" data-a="slot-del" data-v="${h(v.id)}">הסרת השיבוץ</button>` : ''}`);
+}
+
+async function adminSave(action, payload, msg) {
+  try {
+    await call(action, payload);
+    closeModal(); toast(msg || 'נשמר ✓');
+    if (action === 'saveUser') S.boot = Object.assign(S.boot, await call('bootstrap'));
+    if (S.tab === 'admin') loadAdmin(); else { S.admin.data = null; if (S.tab === 'sched') loadSched(); }
+  } catch (e) { fail(e); }
+}
+
+/* ============================== אירועים ============================== */
+document.addEventListener('click', e => {
+  if (e.target.id === 'modal') return closeModal();
+  const el = e.target.closest('[data-a]');
+  if (!el) return;
+  if (el.tagName === 'A') e.preventDefault();
+  const a = el.dataset.a, v = el.dataset.v, id = el.dataset.id;
+  const f = id ? S.forms[id] : null;
+  switch (a) {
+    case 'login-send': return loginSend();
+    case 'login-verify': return loginVerify();
+    case 'login-back': S.login.step = 'email'; return showLogin();
+    case 'logout': return logout();
+    case 'install-now': return installNow();
+    case 'install-later': return installLater();
+    case 'tab': return go(v);
+    case 'modal-close': return closeModal();
+
+    case 'day-move': S.day.date = addDays(S.day.date, Number(v)); return loadDay();
+    case 'day-today': S.day.date = S.today; return loadDay();
+    case 'open-form': formFor(findLesson(id)).open = true; return rerenderLesson(id);
+    case 'close-form': delete S.forms[id]; return rerenderLesson(id);
+    case 'choose': {
+      const l = findLesson(id), sid = l.students[0].id;
+      if (v === 'hp' || v === 'ha') { f.status = HELD; f.att[sid].present = v === 'hp'; }
+      else f.status = { h: HELD, n: NOT_HELD, p: POSTPONED }[v];
+      return rerenderLesson(id);
+    }
+    case 'att': f.att[el.dataset.sid].present = v === '1'; return rerenderLesson(id);
+    case 'save-report': return saveReport(id);
+
+    case 'range-preset': {
+      const k = el.dataset.k, st = S[k];
+      st.preset = v;
+      if (v === 'custom') { const [a1, b1] = presetRange('month', st); st.from = st.from || a1; st.to = st.to || b1; return k === 'dash' ? renderDash() : renderReports(); }
+      return loadRange(k);
+    }
+    case 'range-custom': {
+      const k = el.dataset.k, st = S[k];
+      st.from = val(k + '-from'); st.to = val(k + '-to');
+      if (!st.from || !st.to || st.from > st.to) return toast('טווח תאריכים לא תקין', true);
+      return loadRange(k);
+    }
+    case 'dash-student': S.dash.f.student = S.dash.f.student === v ? '' : v; return renderDash();
+    case 'rep-view': S.rep.view = v; return renderReports();
+    case 'rep-print': return window.print();
+    case 'rep-xlsx': return exportXlsx();
+    case 'rep-gsheet': return exportGSheet();
+    case 'set-save': {
+      const chk = id => document.getElementById(id).checked;
+      return adminSave('saveSettings', {
+        remindersOn: chk('set-on'), reminderHour: val('set-hour'), fridayHour: val('set-fri'),
+        weeklyOn: chk('set-weekly'), weeklyHour: val('set-whour'), weeklyToManagers: chk('set-wmgr'), lowThreshold: val('set-thr'),
+      }, 'ההגדרות נשמרו').then(() => call('bootstrap')).then(b => { if (b) S.boot.threshold = b.threshold; });
+    }
+    case 'set-test': return call('testReminder').then(r => toast(`נשלח מייל בדיקה אל ${r.sentTo} (דוגמה של ${r.sample})`)).catch(fail);
+    case 'set-test-weekly': return call('testWeekly').then(r => toast(`נשלח סיכום לדוגמה (${fmtDate(r.from, false)}–${fmtDate(r.to, false)}) אל ${r.sentTo.join(', ')}`)).catch(fail);
+
+    case 'admin-sub': S.admin.sub = v; return renderAdmin();
+    case 'student-new': return studentModal();
+    case 'student-edit': return studentModal(S.admin.data.students.find(s => s.id === v));
+    case 'student-save': return adminSave('saveStudent', { id: v, name: val('m-name'), className: val('m-class'), approvedHours: val('m-hours'), notes: val('m-notes'), active: val('m-active') });
+    case 'user-new': return userModal();
+    case 'user-edit': return userModal(S.admin.data.users.find(u => u.email === v));
+    case 'user-save': return adminSave('saveUser', { originalEmail: v, email: val('m-email'), name: val('m-name'), role: val('m-role'), active: val('m-active') });
+    case 'slot-new': return slotModal('');
+    case 'slot-edit': return slotModal(v);
+    case 'slot-save': return adminSave('saveSlot', {
+      id: v, teacherEmail: val('m-teacher'), subject: val('m-subject'), day: val('m-day'), time: val('m-time'),
+      studentIds: [...document.querySelectorAll('.m-stu:checked')].map(x => x.value),
+      validFrom: val('m-from'), validTo: val('m-to'), effectiveFrom: val('m-eff'),
+    });
+    case 'slot-del': return askConfirm('להסיר את השיבוץ? אם כבר דווחו עליו שיעורים, הוא רק יסתיים והדיווחים יישמרו.', 'slot-del-yes', v);
+    case 'slot-del-yes': return adminSave('deleteSlot', { id: v }, 'השיבוץ הוסר');
+    case 'hol-add': return adminSave('saveHoliday', { from: val('hol-from'), to: val('hol-to'), description: val('hol-desc') }, 'החופשה נוספה');
+    case 'hol-del': return askConfirm('למחוק את החופשה?', 'hol-del-yes', v);
+    case 'hol-del-yes': return adminSave('deleteHoliday', { id: v }, 'נמחק');
+  }
+});
+
+document.addEventListener('change', e => {
+  const el = e.target, a = el.dataset.a;
+  if (a === 'day-teacher') { S.day.teacher = el.value; return loadDay(); }
+  if (a === 'day-pick') { if (el.value) { S.day.date = el.value; loadDay(); } return; }
+  if (a === 'filter') { const k = el.dataset.s; S[k].f[el.dataset.k] = el.value; return k === 'dash' ? renderDash() : renderReports(); }
+  if (a === 'rep-student') { S.rep.student = el.value; return renderReports(); }
+  if (a === 'sched-filter') { S.sched.f[el.dataset.k] = el.value; return renderSched(); }
+  if (a === 'admin-ended') { S.admin.showEnded = el.checked; return renderAdmin(); }
+  if (a === 'hist-teacher') { S.admin.histTeacher = el.value; return renderAdmin(); }
+  const fld = el.dataset.f, id = el.dataset.id;
+  if (!fld || !S.forms[id]) return;
+  const f = S.forms[id];
+  if (fld === 'reason') { f.reason = el.value; return rerenderLesson(id); }
+  if (fld === 'attReason') { f.att[el.dataset.sid].reason = el.value; return rerenderLesson(id); }
+});
+
+document.addEventListener('input', e => {
+  const el = e.target, fld = el.dataset.f, id = el.dataset.id;
+  if (!fld || !S.forms[id]) return;
+  const f = S.forms[id];
+  if (fld === 'attReasonText') f.att[el.dataset.sid].reasonText = el.value;
+  else if (fld !== 'reason' && fld !== 'attReason') f[fld] = el.value;
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (e.target.id === 'lg-email') loginSend();
+  if (e.target.id === 'lg-code') loginVerify();
+});
+
+init();
+showInstall();
+</script>
+<script>
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
