@@ -137,6 +137,10 @@
   .subtabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
   .list-item { display: flex; gap: 10px; align-items: center; }
   .dim { opacity: .55; }
+  .sched-list { margin-top: 10px; border-top: 1px solid var(--line); }
+  .sched-row { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .sched-row:last-child { border-bottom: 0; }
+  .sched-when { min-width: 105px; color: #374151; }
   .checks { max-height: 220px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 10px; padding: 6px 10px; }
   .checks label { display: flex; gap: 8px; align-items: center; padding: 5px 0; }
 
@@ -1002,12 +1006,43 @@ function renderAdmin() {
   }
 
   if (A.sub === 'slots') {
-    const list = d.slots.filter(s => A.showEnded || !s.validTo || s.validTo >= S.today)
-      .sort((a, b) => (tName[a.teacherEmail] || '').localeCompare(tName[b.teacherEmail] || '', 'he') || S.boot.days.indexOf(a.day) - S.boot.days.indexOf(b.day) || (a.time < b.time ? -1 : 1));
-    html += `<div class="row" style="margin-bottom:10px"><button class="btn pri" data-a="slot-new">+ שיבוץ חדש</button>
+    const byDay = (a, b) => S.boot.days.indexOf(a.day) - S.boot.days.indexOf(b.day) || (a.time < b.time ? -1 : 1);
+    const visible = d.slots.filter(s => A.showEnded || !s.validTo || s.validTo >= S.today);
+    const view = A.slotView || 'student';
+    html += `<div class="row" style="margin-bottom:10px">
+      <div class="chips"><button class="chip${view === 'student' ? ' on' : ''}" data-a="slot-view" data-v="student">לפי תלמידה</button><button class="chip${view === 'teacher' ? ' on' : ''}" data-a="slot-view" data-v="teacher">לפי מורה</button></div>
       <label class="small row" style="gap:4px"><input type="checkbox" data-a="admin-ended"${A.showEnded ? ' checked' : ''}> הצגת שיבוצים שהסתיימו</label></div>
-      <div class="muted small" style="margin-bottom:8px">כל שיבוץ הוא מפגש שבועי קבוע. בשיעור קבוצתי בוחרים כמה תלמידות באותו שיבוץ.</div>`;
-    html += list.length ? `<div class="tbl-wrap"><table><thead><tr><th>מורה</th><th>מקצוע</th><th>יום</th><th>שעה</th><th>תלמידות</th><th>תוקף</th><th></th></tr></thead><tbody>` +
+      <div class="muted small" style="margin-bottom:8px">כל שיבוץ הוא מפגש שבועי קבוע. בשיעור קבוצתי בוחרים כמה תלמידות באותו שיבוץ, והוא יופיע אצל כל אחת מהן.</div>`;
+
+    if (view === 'student') {
+      // המערכת השבועית של כל תלמידה
+      const students = d.students.filter(s => s.active !== 'לא' || visible.some(x => x.studentIds.split(',').includes(s.id)))
+        .sort((a, b) => a.className.localeCompare(b.className, 'he') || a.name.localeCompare(b.name, 'he'));
+      html += students.length ? students.map(st => {
+        const mine = visible.filter(x => x.studentIds.split(',').includes(st.id)).sort(byDay);
+        const nowCount = mine.filter(slotActiveToday).length;
+        const gap = st.approvedHours && nowCount !== st.approvedHours;
+        return `<div class="card${st.active === 'לא' ? ' dim' : ''}">
+          <div class="list-item"><div class="grow"><b>${h(st.name)}</b> <span class="muted">· ${h(st.className)}</span>
+            <div class="small" style="margin-top:2px">סל שבועי: <b>${st.approvedHours || 0}</b> · משובצות: <b>${nowCount}</b>
+            ${!mine.length ? ' <span class="badge b-bad">אין שיבוצים</span>' : gap ? ' <span class="badge b-warn">יש פער בין הסל לשיבוץ</span>' : ' <span class="badge b-ok">תואם לסל</span>'}</div></div>
+            ${st.active !== 'לא' ? `<button class="btn sm pri" data-a="slot-new" data-stu="${h(st.id)}">+ שיבוץ</button>` : ''}</div>
+          ${mine.length ? `<div class="sched-list">${mine.map(x => {
+            const others = x.studentIds.split(',').filter(id => id !== st.id).map(id => stu[id] ? stu[id].name : '?');
+            return `<div class="sched-row${x.validTo && x.validTo < S.today ? ' dim' : ''}">
+              <div class="sched-when">יום ${h(x.day)} <b>${h(x.time)}</b></div>
+              <div class="grow">${h(x.subject)} · ${h(tName[x.teacherEmail] || x.teacherEmail)}
+                ${others.length ? `<span class="tag">קבוצתי, עם ${h(others.join(', '))}</span>` : ''}
+                ${x.validFrom > S.today ? `<span class="tag">החל מ${fmtFull(x.validFrom)}</span>` : ''}${x.validTo ? `<span class="tag">עד ${fmtFull(x.validTo)}</span>` : ''}</div>
+              <button class="btn sm" data-a="slot-edit" data-v="${h(x.id)}">עריכה</button></div>`;
+          }).join('')}</div>` : ''}
+        </div>`;
+      }).join('') : '<div class="empty">עדיין אין תלמידות. קודם מוסיפים תלמידות בלשונית "תלמידות".</div>';
+    }
+
+    const list = visible.slice().sort((a, b) => (tName[a.teacherEmail] || '').localeCompare(tName[b.teacherEmail] || '', 'he') || byDay(a, b));
+    if (view === 'teacher') html += `<div class="row" style="margin-bottom:10px"><button class="btn pri" data-a="slot-new">+ שיבוץ חדש</button></div>`;
+    if (view === 'teacher') html += list.length ? `<div class="tbl-wrap"><table><thead><tr><th>מורה</th><th>מקצוע</th><th>יום</th><th>שעה</th><th>תלמידות</th><th>תוקף</th><th></th></tr></thead><tbody>` +
       list.map(s => `<tr class="${s.validTo && s.validTo < S.today ? 'dim' : ''}"><td>${h(tName[s.teacherEmail] || s.teacherEmail)}</td><td>${h(s.subject)}</td><td>${h(s.day)}</td><td>${h(s.time)}</td>
         <td style="white-space:normal">${h(s.studentIds.split(',').map(id => stu[id] ? stu[id].name : '?').join(', '))}</td>
         <td class="small">${s.validFrom ? 'מ' + fmtFull(s.validFrom) : ''}${s.validTo ? ' עד ' + fmtFull(s.validTo) : ''}</td>
@@ -1095,7 +1130,28 @@ function studentModal(s) {
     <div class="grow"><label class="f">שעות סל שבועיות</label><input type="number" min="0" step="1" id="m-hours" value="${h(s.approvedHours)}"></div></div>
     <label class="f">הערות</label><textarea id="m-notes">${h(s.notes)}</textarea>
     <label class="f">סטטוס</label><select id="m-active">${opt('כן', 'פעילה', s.active)}${opt('לא', 'לא פעילה (עזבה / סיימה)', s.active)}</select>
-    <div class="form-actions"><button class="btn pri" data-a="student-save" data-v="${h(s.id)}">שמירה</button><button class="btn" data-a="modal-close">ביטול</button></div>`);
+    <div class="form-actions"><button class="btn pri" data-a="student-save" data-v="${h(s.id)}">שמירה</button><button class="btn" data-a="modal-close">ביטול</button></div>
+    ${s.id ? `<button class="btn ghost danger" style="margin-top:8px" data-a="student-del" data-v="${h(s.id)}">מחיקת התלמידה</button>` : ''}`);
+}
+
+/** שיבוצים שהמחיקה תשפיע עליהם – כדי להציג אותם בחלון האישור. */
+function slotsOf(kind, key) {
+  const d = S.admin.data;
+  return d.slots.filter(x => kind === 'user' ? x.teacherEmail.toLowerCase() === key.toLowerCase() : x.studentIds.split(',').includes(key));
+}
+
+function confirmDelete(kind, key) {
+  const d = S.admin.data;
+  const item = kind === 'user' ? d.users.find(u => u.email === key) : d.students.find(s => s.id === key);
+  if (!item) return;
+  const n = slotsOf(kind, key).length;
+  const who = kind === 'user' ? 'המורה' : 'התלמידה';
+  const slotsNote = !n ? '' : kind === 'user'
+    ? `<p>למורה יש <b>${n === 1 ? 'שיבוץ אחד' : n + ' שיבוצים'}</b>, ${n === 1 ? 'והוא יימחק' : 'והם יימחקו'} יחד איתה.</p>`
+    : `<p>לתלמידה יש <b>${n === 1 ? 'שיבוץ אחד' : n + ' שיבוצים'}</b>. היא תוסר מהם, ושיבוץ שנשאר בלי תלמידות יימחק.</p>`;
+  openModal(`<h3>מחיקת ${h(item.name)}</h3>${slotsNote}
+    <p class="muted small">אם ${who} כבר הופיעה בשיעורים שדווחו, אי אפשר למחוק אותה כדי לא לאבד את ההיסטוריה. במקרה כזה אפשר לסמן אותה "לא פעילה".</p>
+    <div class="form-actions"><button class="btn danger" data-a="${kind}-del-yes" data-v="${h(key)}">מחיקה</button><button class="btn pri" data-a="modal-close">ביטול</button></div>`);
 }
 
 function userModal(u) {
@@ -1105,18 +1161,20 @@ function userModal(u) {
     <label class="f">כתובת מייל (משמשת לכניסה)</label><input type="email" id="m-email" dir="ltr" value="${h(u.email)}">
     <label class="f">תפקיד</label><select id="m-role">${[ROLE_TEACHER, ROLE_COORD, ROLE_MANAGER].map(r => opt(r, r, u.role)).join('')}</select>
     <label class="f">סטטוס</label><select id="m-active">${opt('כן', 'פעילה', u.active)}${opt('לא', 'לא פעילה (אין כניסה)', u.active)}</select>
-    <div class="form-actions"><button class="btn pri" data-a="user-save" data-v="${h(u.email)}">שמירה</button><button class="btn" data-a="modal-close">ביטול</button></div>`);
+    <div class="form-actions"><button class="btn pri" data-a="user-save" data-v="${h(u.email)}">שמירה</button><button class="btn" data-a="modal-close">ביטול</button></div>
+    ${u.email && u.email.toLowerCase() !== S.boot.user.email ? `<button class="btn ghost danger" style="margin-top:8px" data-a="user-del" data-v="${h(u.email)}">מחיקת המשתמשת</button>` : ''}`);
 }
 
-async function slotModal(slotId) {
+async function slotModal(slotId, forStudent) {
   let d = S.admin.data;
   if (!d) { try { d = S.admin.data = await call('adminData'); } catch (e) { return fail(e); } }
   const s = slotId ? d.slots.find(x => x.id === slotId) : null;
-  const v = s || { id: '', teacherEmail: '', subject: '', day: '', time: '', studentIds: '', validFrom: S.today, validTo: '' };
+  const v = s || { id: '', teacherEmail: '', subject: '', day: '', time: '', studentIds: forStudent || '', validFrom: S.today, validTo: '' };
   const chosen = v.studentIds ? v.studentIds.split(',') : [];
   const subjects = uniq(d.slots.map(x => x.subject));
   const students = d.students.filter(x => x.active !== 'לא' || chosen.includes(x.id)).sort((a, b) => a.className.localeCompare(b.className, 'he') || a.name.localeCompare(b.name, 'he'));
-  openModal(`<h3>${s ? 'עריכת שיבוץ' : 'שיבוץ חדש'}</h3>
+  const forName = forStudent && (d.students.find(x => x.id === forStudent) || {}).name;
+  openModal(`<h3>${s ? 'עריכת שיבוץ' : forName ? 'שיבוץ חדש ל' + h(forName) : 'שיבוץ חדש'}</h3>
     <label class="f">מורה</label><select id="m-teacher"><option value="">בחרי מורה…</option>${d.users.filter(u => u.active !== 'לא' && u.role !== ROLE_MANAGER).map(u => opt(u.email.toLowerCase(), u.name, v.teacherEmail)).join('')}</select>
     <label class="f">מקצוע</label><input type="text" id="m-subject" list="subj-list" value="${h(v.subject)}"><datalist id="subj-list">${subjects.map(x => `<option value="${h(x)}">`).join('')}</datalist>
     <div class="row"><div class="grow"><label class="f">יום</label><select id="m-day"><option value="">בחרי…</option>${S.boot.days.map(x => opt(x, x, v.day)).join('')}</select></div>
@@ -1135,9 +1193,14 @@ async function adminSave(action, payload, msg) {
   try {
     await call(action, payload);
     closeModal(); toast(msg || 'נשמר ✓');
-    if (action === 'saveUser') S.boot = Object.assign(S.boot, await call('bootstrap'));
+    if (action === 'saveUser' || action === 'deleteUser') S.boot = Object.assign(S.boot, await call('bootstrap'));
     if (S.tab === 'admin') loadAdmin(); else { S.admin.data = null; if (S.tab === 'sched') loadSched(); }
-  } catch (e) { fail(e); }
+  } catch (e) {
+    if (/פעולה לא מוכרת/.test(e.message || '')) {
+      return toast('האפשרות הזו תעבוד אחרי עדכון השרת. בינתיים אפשר לסמן "לא פעילה".', true);
+    }
+    fail(e);
+  }
 }
 
 /* ============================== אירועים ============================== */
@@ -1206,7 +1269,12 @@ document.addEventListener('click', e => {
     case 'user-new': return userModal();
     case 'user-edit': return userModal(S.admin.data.users.find(u => u.email === v));
     case 'user-save': return adminSave('saveUser', { originalEmail: v, email: val('m-email'), name: val('m-name'), role: val('m-role'), active: val('m-active') });
-    case 'slot-new': return slotModal('');
+    case 'user-del': return confirmDelete('user', v);
+    case 'user-del-yes': return adminSave('deleteUser', { email: v }, 'המשתמשת נמחקה');
+    case 'student-del': return confirmDelete('student', v);
+    case 'student-del-yes': return adminSave('deleteStudent', { id: v }, 'התלמידה נמחקה');
+    case 'slot-new': return slotModal('', el.dataset.stu || '');
+    case 'slot-view': S.admin.slotView = v; return renderAdmin();
     case 'slot-edit': return slotModal(v);
     case 'slot-save': return adminSave('saveSlot', {
       id: v, teacherEmail: val('m-teacher'), subject: val('m-subject'), day: val('m-day'), time: val('m-time'),
