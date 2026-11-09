@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="סל אישי">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/favicon.png">
+<base target="_top">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>מעקב שעות סל אישי</title>
@@ -132,6 +133,39 @@
   /* מערכת שעות */
   .daycol h4 { margin: 16px 0 8px; font-size: 16px; color: var(--pri); }
   .slot { display: flex; gap: 12px; align-items: center; }
+  .tt-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .tt-bar select { width: auto; min-width: 180px; flex: 1; max-width: 340px; }
+  .tt-sum { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 12px 0 10px; }
+  .tt-sum .name { font-size: 19px; font-weight: 700; }
+  .tt-wrap { overflow-x: auto; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); }
+  table.tt { table-layout: fixed; min-width: 660px; }
+  table.tt th, table.tt td { white-space: normal; border: 1px solid var(--line); padding: 4px; vertical-align: top; }
+  table.tt thead th { text-align: center; font-size: 15px; position: static; }
+  table.tt th.p { width: 78px; text-align: center; background: #f9fafb; font-size: 13px; font-weight: 500; vertical-align: middle; }
+  table.tt th.p small { display: block; color: var(--muted); font-weight: 400; font-size: 11.5px; }
+  table.tt td { height: 62px; }
+  table.tt td.conf { background: #fff1f2; }
+  .tt-add { width: 100%; height: 100%; min-height: 52px; border: 1px dashed transparent; background: none; color: #cbd5e1; cursor: pointer; border-radius: 8px; font-size: 20px; }
+  .tt-add:hover { border-color: var(--pri); color: var(--pri); background: var(--pri-weak); }
+  .tt-slot { display: block; width: 100%; text-align: start; border: 0; border-inline-start: 4px solid; border-radius: 8px; padding: 5px 7px; font-size: 12.5px; line-height: 1.3; margin-bottom: 3px; color: #1f2937; }
+  button.tt-slot { cursor: pointer; }
+  button.tt-slot:hover { filter: brightness(.96); }
+  .tt-slot b { display: block; font-size: 14px; }
+  .tt-slot .w { color: #374151; }
+  .tt-slot.future { opacity: .75; border-inline-start-style: dashed; }
+  .tt-slot .warn-t { color: var(--bad); font-weight: 500; }
+  .tt-legend { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .tt-day .tt-row { display: flex; gap: 10px; align-items: stretch; border-bottom: 1px solid var(--line); padding: 6px 0; }
+  .tt-day .tt-row:last-child { border-bottom: 0; }
+  .tt-day .when { min-width: 72px; font-size: 14px; font-weight: 500; padding-top: 6px; }
+  .tt-day .when small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; }
+  .tt-day .tt-add { min-height: 40px; font-size: 15px; color: #94a3b8; border-color: #e5e7eb; text-align: start; padding: 0 12px; }
+  .per-row { display: flex; gap: 6px; align-items: center; margin: 6px 0; }
+  .per-row b { min-width: 58px; font-weight: 500; }
+  .per-row input[type=time] { width: auto; }
+  .warnbox { background: var(--warn-bg); color: #78350f; border-radius: 10px; padding: 8px 10px; font-size: 14px; margin-top: 8px; }
+  .modal-sub { color: var(--muted); margin: -4px 0 6px; }
+  .linkbtn { background: none; border: 0; color: var(--pri); cursor: pointer; padding: 6px 0; font-weight: 500; }
 
   /* ניהול */
   .subtabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -146,7 +180,7 @@
 
   /* חלון קופץ */
   .modal { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: flex; align-items: flex-start; justify-content: center; padding: 30px 12px; z-index: 50; overflow-y: auto; }
-  .modal.hidden { display: none; }
+  .modal.hidden, .hidden { display: none !important; }
   .modal-box { background: #fff; border-radius: 16px; width: 100%; max-width: 520px; padding: 18px; }
   .modal-box h3 { margin-top: 0; }
 
@@ -213,8 +247,8 @@ const S = {
   day: { date: null, teacher: '', data: null }, forms: {},
   dash: { preset: 'week', from: '', to: '', data: null, f: { student: '', teacher: '', subject: '', className: '' } },
   rep: { preset: 'month', from: '', to: '', data: null, f: { student: '', teacher: '', subject: '', className: '' }, view: 'students', student: '' },
-  sched: { date: '', data: null, f: { student: '', teacher: '', className: '', day: '' } },
-  admin: { sub: 'students', data: null, showEnded: false },
+  sched: { date: '', data: null, view: 'student', student: '', teacher: '', day: '' },
+  admin: { sub: 'students', data: null, more: false, periodsDraft: null },
   login: { step: 'email', email: '' },
 };
 
@@ -929,50 +963,177 @@ async function exportGSheet() {
   } catch (e) { if (win) win.close(); fail(e); }
 }
 
+/* ---------- שעות המערכת (שעה 1, שעה 2...) ---------- */
+const DEFAULT_PERIODS = [
+  { start: '08:30', end: '09:15' }, { start: '09:15', end: '10:00' }, { start: '10:30', end: '11:15' },
+  { start: '11:15', end: '12:00' }, { start: '12:10', end: '12:55' }, { start: '12:55', end: '13:40' },
+  { start: '14:00', end: '14:45', bStart: '14:20', bEnd: '15:05' }, { start: '14:45', end: '15:30', bStart: '15:05', bEnd: '15:50' },
+];
+function periods() { return (S.boot && S.boot.periods && S.boot.periods.length) ? S.boot.periods : DEFAULT_PERIODS; }
+function boardingDay() { return S.boot && S.boot.boardingDay != null ? S.boot.boardingDay : ''; }
+/** שעות המערכת של יום מסוים – ביום פנימיה חלק מהשעות זזות. */
+function periodsFor(day) {
+  const bd = boardingDay();
+  return periods().map(p => day && day === bd && p.bStart && p.bEnd ? { start: p.bStart, end: p.bEnd } : { start: p.start, end: p.end });
+}
+function padT(t) { const [a, b] = String(t || '').split(':'); return a ? a.padStart(2, '0') + ':' + (b || '00').padStart(2, '0') : ''; }
+function shortT(t) { return String(t || '').replace(/^0(\d)/, '$1'); }
+/** לאיזו שעת מערכת שייך שיעור שמתחיל בשעה הזו (-1 אם לאף אחת). */
+function periodOf(time, day) {
+  const t = padT(time), ps = periodsFor(day);
+  let i = ps.findIndex(p => p.start === t);
+  if (i < 0) i = ps.findIndex(p => t >= p.start && t < p.end);
+  return i;
+}
+function periodRange(i, day) { const p = periodsFor(day)[i]; return p ? '⁦' + shortT(p.start) + '–' + shortT(p.end) + '⁩' : ''; }
+function whenText(day, time) {
+  const i = periodOf(time, day);
+  return `יום ${day}, ` + (i >= 0 ? `שעה ${i + 1} · ${periodRange(i, day)}` : `בשעה ${shortT(time)}`);
+}
+
+/** צבע קבוע לכל מקצוע. */
+const SUBJ_COLORS = [['#e0f2fe', '#0284c7'], ['#fef3c7', '#d97706'], ['#ede9fe', '#7c3aed'], ['#dcfce7', '#16a34a'],
+  ['#fce7f3', '#db2777'], ['#ffedd5', '#ea580c'], ['#e0e7ff', '#4f46e5'], ['#ccfbf1', '#0d9488'], ['#f1f5f9', '#475569']];
+function subjColor(subject, all) {
+  const i = Math.max(0, all.indexOf(subject));
+  return SUBJ_COLORS[i % SUBJ_COLORS.length];
+}
+
+function overlaps(a, b) {
+  return (a.validFrom || '') <= (b.validTo || '9999') && (b.validFrom || '') <= (a.validTo || '9999');
+}
+/** שיבוצים שמתנגשים: אותה מורה, או אותה תלמידה, באותו יום ובאותה שעת מערכת. */
+function conflictsOf(slot, all) {
+  const p = periodOf(slot.time, slot.day);
+  const ids = slot.studentIds.split(',');
+  return all.filter(o => o.id !== slot.id && o.day === slot.day && overlaps(o, slot) &&
+    (p >= 0 ? periodOf(o.time, o.day) === p : padT(o.time) === padT(slot.time)) &&
+    (o.teacherEmail === slot.teacherEmail || o.studentIds.split(',').some(id => ids.includes(id))));
+}
+
+const isNarrow = () => window.innerWidth < 700;
+
 /* ============================== מערכת שעות ============================== */
 async function loadSched() {
   try { S.sched.data = await call('schedule', { date: S.sched.date || S.today }); renderSched(); } catch (e) { fail(e); }
 }
 
 function renderSched() {
-  const d = S.sched.data, f = S.sched.f, B = S.boot;
+  const d = S.sched.data, Q = S.sched, B = S.boot;
   const stu = {}; d.students.forEach(s => { stu[s.id] = s; });
   const tName = {}; d.teachers.forEach(t => { tName[t.email] = t.name; });
-  const classes = uniq(d.students.map(s => s.className));
-  const slots = d.slots.filter(s => {
-    const ids = s.studentIds.split(',');
-    return (!f.teacher || s.teacherEmail === f.teacher) && (!f.day || s.day === f.day) &&
-      (!f.student || ids.includes(f.student)) && (!f.className || ids.some(id => stu[id] && stu[id].className === f.className));
-  });
+  const all = d.slots.filter(s => !s.validTo || s.validTo >= S.today);
+  const subjects = uniq(all.map(s => s.subject));
+  const edit = isCoord();
   let html = '';
+
+  // מה מציגים: תלמידה אחת או מורה אחת
+  let mode = canView() ? Q.view : 'teacher';
+  const students = d.students.filter(s => s.active !== 'לא').sort((a, b) => a.className.localeCompare(b.className, 'he') || a.name.localeCompare(b.name, 'he'));
+  const teachers = d.teachers.filter(t => t.role !== ROLE_MANAGER);
+  let list, key;
+  if (mode === 'student') {
+    list = students.map(s => [s.id, s.name + ' · ' + s.className]);
+    if (!list.some(x => x[0] === Q.student)) Q.student = list.length ? list[0][0] : '';
+    key = Q.student;
+  } else {
+    list = canView() ? teachers.map(t => [t.email, t.name]) : [[B.user.email, B.user.name]];
+    if (!list.some(x => x[0] === Q.teacher)) Q.teacher = canView() ? (list.length ? list[0][0] : '') : B.user.email;
+    key = Q.teacher;
+  }
+
   if (canView()) {
-    html += `<div class="card"><div class="filters" style="margin-top:0">
-      <select data-a="sched-filter" data-k="student"><option value="">כל התלמידות</option>${d.students.filter(s => s.active !== 'לא').sort((a, b) => a.name.localeCompare(b.name, 'he')).map(s => opt(s.id, s.name, f.student)).join('')}</select>
-      <select data-a="sched-filter" data-k="className"><option value="">כל הכיתות</option>${classes.map(x => opt(x, x, f.className)).join('')}</select>
-      <select data-a="sched-filter" data-k="teacher"><option value="">כל המורות</option>${d.teachers.filter(t => t.role !== ROLE_MANAGER).map(t => opt(t.email, t.name, f.teacher)).join('')}</select>
-      <select data-a="sched-filter" data-k="day"><option value="">כל הימים</option>${B.days.map(x => opt(x, 'יום ' + x, f.day)).join('')}</select>
-    </div>${isCoord() ? '<div class="row" style="margin-top:10px"><button class="btn pri sm" data-a="slot-new">+ שיבוץ חדש</button></div>' : ''}</div>`;
+    const idx = list.findIndex(x => x[0] === key);
+    html += `<div class="card no-print"><div class="tt-bar">
+      <div class="chips"><button class="chip${mode === 'student' ? ' on' : ''}" data-a="tt-view" data-v="student">לפי תלמידה</button><button class="chip${mode === 'teacher' ? ' on' : ''}" data-a="tt-view" data-v="teacher">לפי מורה</button></div>
+      <button class="btn sm" data-a="tt-step" data-v="-1"${idx <= 0 ? ' disabled' : ''} title="הקודמת">→</button>
+      <select data-a="tt-pick">${list.map(([k, l]) => opt(k, l, key)).join('')}</select>
+      <button class="btn sm" data-a="tt-step" data-v="1"${idx < 0 || idx >= list.length - 1 ? ' disabled' : ''} title="הבאה">←</button>
+    </div></div>`;
   }
-  if (f.student && stu[f.student]) {
-    const s = stu[f.student], n = slots.filter(x => !x.validFrom || x.validFrom <= S.today).length;
-    html += `<div class="alert ${s.approvedHours && n !== s.approvedHours ? 'warn' : ''}" style="background:${s.approvedHours && n !== s.approvedHours ? '' : 'var(--pri-weak)'}"><b>${h(s.name)}</b> · כיתה ${h(s.className)} · סל שבועי: ${s.approvedHours} שעות · משובצות כרגע: ${n}${s.approvedHours && n !== s.approvedHours ? ' ⚠ יש פער' : ''}</div>`;
+  if (!key) {
+    html += `<div class="empty">${mode === 'student' ? 'עדיין אין תלמידות. מוסיפים אותן ב<b>ניהול ← תלמידות</b>.' : 'עדיין אין מורות. מוסיפים אותן ב<b>ניהול ← מורות</b>.'}</div>`;
+    document.getElementById('app').innerHTML = html;
+    return;
   }
-  const byDay = B.days.map(day => [day, slots.filter(s => s.day === day).sort((a, b) => a.time < b.time ? -1 : 1)]).filter(x => x[1].length);
-  if (!byDay.length) html += '<div class="empty">אין שיבוצים להצגה</div>';
-  html += byDay.map(([day, list]) => `<div class="daycol"><h4>יום ${h(day)}</h4>` + list.map(s => {
+
+  const mine = all.filter(s => mode === 'student' ? s.studentIds.split(',').includes(key) : s.teacherEmail === key);
+
+  // שורת סיכום
+  if (mode === 'student') {
+    const s = stu[key], n = mine.filter(slotActiveToday).length, gap = (s.approvedHours || 0) - n;
+    html += `<div class="tt-sum"><span class="name">${h(s.name)}</span><span class="muted">כיתה ${h(s.className)}</span>
+      <span>סל שבועי: <b>${s.approvedHours || 0}</b> · שובצו: <b>${n}</b></span>
+      ${!s.approvedHours ? '' : gap > 0 ? `<span class="badge b-warn">חסרות ${gap === 1 ? 'שעה אחת' : gap + ' שעות'}</span>` : gap < 0 ? `<span class="badge b-warn">שובצו ${-gap === 1 ? 'שעה אחת' : -gap + ' שעות'} יותר מהסל</span>` : '<span class="badge b-ok">תואם לסל ✓</span>'}</div>`;
+  } else {
+    html += `<div class="tt-sum"><span class="name">${h(tName[key] || key)}</span><span>${(n => n === 1 ? 'שיעור אחד' : n + ' שיעורים')(mine.filter(slotActiveToday).length)} בשבוע</span></div>`;
+  }
+
+  // בניית התאים
+  const ps = periods(), days = B.days;
+  const cell = {}, other = {};
+  mine.forEach(s => {
+    const p = periodOf(s.time, s.day);
+    if (p < 0) (other[s.day] = other[s.day] || []).push(s);
+    else (cell[s.day + '|' + p] = cell[s.day + '|' + p] || []).push(s);
+  });
+  Object.values(other).forEach(l => l.sort((a, b) => padT(a.time) < padT(b.time) ? -1 : 1));
+
+  const slotHtml = s => {
+    const [bg, bd] = subjColor(s.subject, subjects);
     const ids = s.studentIds.split(',');
-    return `<div class="card slot"><div class="lesson-time">${h(s.time)}</div><div class="grow">
-      <div class="lesson-subj">${h(s.subject)}${ids.length > 1 ? '<span class="tag">קבוצתי</span>' : ''}${s.validFrom > S.today ? `<span class="tag">החל מ${fmtFull(s.validFrom)}</span>` : ''}${s.validTo ? `<span class="tag">עד ${fmtFull(s.validTo)}</span>` : ''}</div>
-      <div class="lesson-studs">${h(studentsText(ids.map(id => stu[id] || { name: '?' })))}</div>
-      <div class="muted small">${h(tName[s.teacherEmail] || s.teacherEmail)}</div></div>
-      ${isCoord() ? `<button class="btn sm" data-a="slot-edit" data-v="${h(s.id)}">עריכה</button>` : ''}</div>`;
-  }).join('') + '</div>').join('');
+    const conf = conflictsOf(s, all);
+    const who = mode === 'student'
+      ? h(tName[s.teacherEmail] || s.teacherEmail) + (ids.length > 1 ? ` · קבוצתי (+${ids.length - 1})` : '')
+      : h(ids.map(id => stu[id] ? stu[id].name : '?').join(', '));
+    const tags = (s.validFrom > S.today ? `<div class="small">החל מ${fmtFull(s.validFrom)}</div>` : '') +
+      (s.validTo ? `<div class="small">עד ${fmtFull(s.validTo)}</div>` : '') +
+      (periodOf(s.time, s.day) < 0 || (s.day === boardingDay() && periods()[periodOf(s.time, s.day)].bStart) ? `<div class="small">${h(shortT(s.time))}</div>` : '') +
+      (conf.length ? `<div class="warn-t">⚠ ${conf.some(o => o.teacherEmail === s.teacherEmail) ? 'למורה יש שיעור נוסף בשעה הזו' : 'לתלמידה יש שיעור נוסף בשעה הזו'}</div>` : '');
+    const inner = `<b>${h(s.subject)}</b><span class="w">${who}</span>${tags}`;
+    const cls = `tt-slot${s.validFrom > S.today ? ' future' : ''}`, st = `background:${bg};border-inline-start-color:${bd}`;
+    return edit ? `<button class="${cls}" style="${st}" data-a="slot-edit" data-v="${h(s.id)}" title="עריכה">${inner}</button>`
+      : `<div class="${cls}" style="${st}">${inner}</div>`;
+  };
+  const addBtn = (day, p, text) => edit ? `<button class="tt-add" data-a="tt-add" data-day="${h(day)}" data-time="${h(periodsFor(day)[p].start)}" title="הוספת שיעור">${text || '+'}</button>` : '';
+
+  if (!isNarrow()) {
+    html += `<div class="tt-wrap"><table class="tt"><thead><tr><th class="p"></th>${days.map(x => `<th>${h(x)}${x === boardingDay() ? '<div class="small muted" style="font-weight:400">יום פנימיה</div>' : ''}</th>`).join('')}</tr></thead><tbody>`;
+    ps.forEach((p, i) => {
+      html += `<tr><th class="p">שעה ${i + 1}<small>${periodRange(i)}</small></th>` + days.map(day => {
+        const l = cell[day + '|' + i] || [];
+        return `<td${l.length > 1 ? ' class="conf"' : ''}>${l.map(slotHtml).join('') || addBtn(day, i)}</td>`;
+      }).join('') + '</tr>';
+    });
+    if (Object.keys(other).length) {
+      html += `<tr><th class="p">שעה אחרת</th>${days.map(day => `<td>${(other[day] || []).map(slotHtml).join('')}</td>`).join('')}</tr>`;
+    }
+    html += '</tbody></table></div>';
+  } else {
+    // בטלפון: יום אחד בכל פעם
+    const todayName = days[weekday(S.today)];
+    if (!days.includes(Q.day)) Q.day = days.includes(todayName) ? todayName : days[0];
+    const count = day => mine.filter(s => s.day === day).length;
+    html += `<div class="chips no-print" style="margin-bottom:8px">${days.map(x => `<button class="chip${x === Q.day ? ' on' : ''}" data-a="tt-day" data-v="${h(x)}">${h(x)}${count(x) ? ` (${count(x)})` : ''}</button>`).join('')}</div>`;
+    html += `<div class="card tt-day">` + ps.map((p, i) => {
+      const l = cell[Q.day + '|' + i] || [];
+      return `<div class="tt-row"><div class="when">שעה ${i + 1}<small>${periodRange(i, Q.day)}</small></div><div class="grow">${l.map(slotHtml).join('') || addBtn(Q.day, i, '+ הוספת שיעור') || '<span class="muted small">—</span>'}</div></div>`;
+    }).join('') + (other[Q.day] || []).map(s => `<div class="tt-row"><div class="when">${h(shortT(s.time))}</div><div class="grow">${slotHtml(s)}</div></div>`).join('') + '</div>';
+  }
+  if (boardingDay() && periods().some(p => p.bStart)) html += `<div class="tt-legend">ביום ${h(boardingDay())} (יום פנימיה) ${periods().map((p, i) => p.bStart ? `שעה ${i + 1} היא ${periodRange(i, boardingDay())}` : '').filter(Boolean).join(', ')}.</div>`;
+  if (edit) html += `<div class="tt-legend no-print">לחיצה על משבצת ריקה מוסיפה שיעור, ולחיצה על שיעור פותחת אותו לעריכה. את שעות הצלצולים אפשר לשנות ב<b>ניהול ← עוד ← הגדרות</b>.</div>`;
   document.getElementById('app').innerHTML = html;
 }
 
+let _resizeT, _wasNarrow = isNarrow();
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeT);
+  _resizeT = setTimeout(() => { if (isNarrow() !== _wasNarrow) { _wasNarrow = isNarrow(); if (S.tab === 'sched' && S.sched.data) renderSched(); } }, 200);
+});
+
 /* ============================== ניהול ============================== */
 async function loadAdmin() {
-  S.admin.history = null;
+  S.admin.history = null; S.admin.periodsDraft = null; S.admin.boardingDraft = null;
   try { S.admin.data = await call('adminData'); renderAdmin(); } catch (e) { fail(e); }
 }
 async function loadHistory() {
@@ -983,8 +1144,11 @@ function slotActiveToday(s) { return (!s.validFrom || s.validFrom <= S.today) &&
 
 function renderAdmin() {
   const A = S.admin, d = A.data;
-  const subs = [['students', 'תלמידות'], ['slots', 'שיבוצים'], ['users', 'מורות ומשתמשים'], ['holidays', 'חופשות'], ['history', 'יומן שינויים'], ['settings', 'הגדרות']];
-  let html = `<div class="subtabs">${subs.map(([k, l]) => `<button class="chip${A.sub === k ? ' on' : ''}" data-a="admin-sub" data-v="${k}">${l}</button>`).join('')}</div>`;
+  if (!['students', 'users', 'holidays', 'history', 'settings'].includes(A.sub)) A.sub = 'students';
+  const subs = [['students', 'תלמידות'], ['users', 'מורות'], ['holidays', 'חופשות']], more = [['history', 'יומן שינויים'], ['settings', 'הגדרות']];
+  const moreOpen = A.more || more.some(x => x[0] === A.sub);
+  const chip = ([k, l]) => `<button class="chip${A.sub === k ? ' on' : ''}" data-a="admin-sub" data-v="${k}">${l}</button>`;
+  let html = `<div class="subtabs">${subs.map(chip).join('')}<button class="chip" data-a="admin-more">${moreOpen ? 'פחות ▴' : 'עוד ▾'}</button>${moreOpen ? more.map(chip).join('') : ''}</div>`;
   const tName = {}; d.users.forEach(u => { tName[u.email.toLowerCase()] = u.name; });
   const stu = {}; d.students.forEach(s => { stu[s.id] = s; });
 
@@ -999,59 +1163,14 @@ function renderAdmin() {
       return `<div class="card${s.active === 'לא' ? ' dim' : ''}"><div class="list-item"><div class="grow">
         <b>${h(s.name)}</b> <span class="muted">· ${h(s.className)}</span>${s.active === 'לא' ? ' <span class="tag">לא פעילה</span>' : ''}
         <div class="small" style="margin-top:4px">סל שבועי: <b>${s.approvedHours}</b> · משובצות: <b>${n}</b> ${mis ? '<span class="badge b-warn">יש פער בין הסל לשיבוץ</span>' : ''}</div>
-        ${mySlots.length ? `<div class="small muted" style="margin-top:4px">${mySlots.map(x => `${h(x.subject)} – ${h(tName[x.teacherEmail] || x.teacherEmail)} (יום ${h(x.day)} ${h(x.time)})`).join('<br>')}</div>` : ''}
+        ${mySlots.length ? `<div class="small muted" style="margin-top:4px">${mySlots.sort((a, b) => S.boot.days.indexOf(a.day) - S.boot.days.indexOf(b.day) || (padT(a.time) < padT(b.time) ? -1 : 1)).map(x => `${h(x.subject)} – ${h(tName[x.teacherEmail] || x.teacherEmail)} (${h(whenText(x.day, x.time))})`).join('<br>')}</div>` : ''}
         ${s.notes ? `<div class="small" style="margin-top:4px">📝 ${h(s.notes)}</div>` : ''}
-      </div><button class="btn sm" data-a="student-edit" data-v="${h(s.id)}">עריכה</button></div></div>`;
+      </div><div class="row" style="flex-direction:column;align-items:stretch;gap:6px">${s.active !== 'לא' ? `<button class="btn sm pri" data-a="tt-open" data-v="${h(s.id)}">מערכת שעות</button>` : ''}<button class="btn sm" data-a="student-edit" data-v="${h(s.id)}">עריכה</button></div></div></div>`;
     }).join('') : '<div class="empty">עדיין אין תלמידות. אפשר להתחיל בהוספת תלמידה.</div>';
   }
 
-  if (A.sub === 'slots') {
-    const byDay = (a, b) => S.boot.days.indexOf(a.day) - S.boot.days.indexOf(b.day) || (a.time < b.time ? -1 : 1);
-    const visible = d.slots.filter(s => A.showEnded || !s.validTo || s.validTo >= S.today);
-    const view = A.slotView || 'student';
-    html += `<div class="row" style="margin-bottom:10px">
-      <div class="chips"><button class="chip${view === 'student' ? ' on' : ''}" data-a="slot-view" data-v="student">לפי תלמידה</button><button class="chip${view === 'teacher' ? ' on' : ''}" data-a="slot-view" data-v="teacher">לפי מורה</button></div>
-      <label class="small row" style="gap:4px"><input type="checkbox" data-a="admin-ended"${A.showEnded ? ' checked' : ''}> הצגת שיבוצים שהסתיימו</label></div>
-      <div class="muted small" style="margin-bottom:8px">כל שיבוץ הוא מפגש שבועי קבוע. בשיעור קבוצתי בוחרים כמה תלמידות באותו שיבוץ, והוא יופיע אצל כל אחת מהן.</div>`;
-
-    if (view === 'student') {
-      // המערכת השבועית של כל תלמידה
-      const students = d.students.filter(s => s.active !== 'לא' || visible.some(x => x.studentIds.split(',').includes(s.id)))
-        .sort((a, b) => a.className.localeCompare(b.className, 'he') || a.name.localeCompare(b.name, 'he'));
-      html += students.length ? students.map(st => {
-        const mine = visible.filter(x => x.studentIds.split(',').includes(st.id)).sort(byDay);
-        const nowCount = mine.filter(slotActiveToday).length;
-        const gap = st.approvedHours && nowCount !== st.approvedHours;
-        return `<div class="card${st.active === 'לא' ? ' dim' : ''}">
-          <div class="list-item"><div class="grow"><b>${h(st.name)}</b> <span class="muted">· ${h(st.className)}</span>
-            <div class="small" style="margin-top:2px">סל שבועי: <b>${st.approvedHours || 0}</b> · משובצות: <b>${nowCount}</b>
-            ${!mine.length ? ' <span class="badge b-bad">אין שיבוצים</span>' : gap ? ' <span class="badge b-warn">יש פער בין הסל לשיבוץ</span>' : ' <span class="badge b-ok">תואם לסל</span>'}</div></div>
-            ${st.active !== 'לא' ? `<button class="btn sm pri" data-a="slot-new" data-stu="${h(st.id)}">+ שיבוץ</button>` : ''}</div>
-          ${mine.length ? `<div class="sched-list">${mine.map(x => {
-            const others = x.studentIds.split(',').filter(id => id !== st.id).map(id => stu[id] ? stu[id].name : '?');
-            return `<div class="sched-row${x.validTo && x.validTo < S.today ? ' dim' : ''}">
-              <div class="sched-when">יום ${h(x.day)} <b>${h(x.time)}</b></div>
-              <div class="grow">${h(x.subject)} · ${h(tName[x.teacherEmail] || x.teacherEmail)}
-                ${others.length ? `<span class="tag">קבוצתי, עם ${h(others.join(', '))}</span>` : ''}
-                ${x.validFrom > S.today ? `<span class="tag">החל מ${fmtFull(x.validFrom)}</span>` : ''}${x.validTo ? `<span class="tag">עד ${fmtFull(x.validTo)}</span>` : ''}</div>
-              <button class="btn sm" data-a="slot-edit" data-v="${h(x.id)}">עריכה</button></div>`;
-          }).join('')}</div>` : ''}
-        </div>`;
-      }).join('') : '<div class="empty">עדיין אין תלמידות. קודם מוסיפים תלמידות בלשונית "תלמידות".</div>';
-    }
-
-    const list = visible.slice().sort((a, b) => (tName[a.teacherEmail] || '').localeCompare(tName[b.teacherEmail] || '', 'he') || byDay(a, b));
-    if (view === 'teacher') html += `<div class="row" style="margin-bottom:10px"><button class="btn pri" data-a="slot-new">+ שיבוץ חדש</button></div>`;
-    if (view === 'teacher') html += list.length ? `<div class="tbl-wrap"><table><thead><tr><th>מורה</th><th>מקצוע</th><th>יום</th><th>שעה</th><th>תלמידות</th><th>תוקף</th><th></th></tr></thead><tbody>` +
-      list.map(s => `<tr class="${s.validTo && s.validTo < S.today ? 'dim' : ''}"><td>${h(tName[s.teacherEmail] || s.teacherEmail)}</td><td>${h(s.subject)}</td><td>${h(s.day)}</td><td>${h(s.time)}</td>
-        <td style="white-space:normal">${h(s.studentIds.split(',').map(id => stu[id] ? stu[id].name : '?').join(', '))}</td>
-        <td class="small">${s.validFrom ? 'מ' + fmtFull(s.validFrom) : ''}${s.validTo ? ' עד ' + fmtFull(s.validTo) : ''}</td>
-        <td><button class="btn sm" data-a="slot-edit" data-v="${h(s.id)}">עריכה</button></td></tr>`).join('') + '</tbody></table></div>'
-      : '<div class="empty">אין שיבוצים</div>';
-  }
-
   if (A.sub === 'users') {
-    html += `<div class="row" style="margin-bottom:10px"><button class="btn pri" data-a="user-new">+ משתמשת חדשה</button></div>
+    html += `<div class="row" style="margin-bottom:10px"><button class="btn pri" data-a="user-new">+ מורה / משתמשת חדשה</button></div>
       <div class="muted small" style="margin-bottom:8px">רק כתובות מייל שרשומות כאן יכולות להיכנס למערכת. <b>מורה</b> רואה ומדווחת רק על השיעורים שלה. <b>הנהלה</b> צופה בלוח הבקרה ובמערכת השעות. <b>רכזת</b> יכולה לנהל הכול.</div>`;
     html += d.users.slice().sort((a, b) => a.name.localeCompare(b.name, 'he')).map(u => `<div class="card${u.active === 'לא' ? ' dim' : ''}"><div class="list-item"><div class="grow">
         <b>${h(u.name)}</b> <span class="tag">${h(u.role)}</span>${u.active === 'לא' ? '<span class="tag">לא פעילה</span>' : ''}
@@ -1072,7 +1191,18 @@ function renderAdmin() {
 
   if (A.sub === 'settings') {
     const s = d.settings, hours = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
-    html += `<div class="card"><b>תזכורות במייל למורות</b>
+    if (!A.periodsDraft) A.periodsDraft = (s.periods && s.periods.length ? s.periods : periods()).map(p => Object.assign({}, p));
+    if (A.boardingDraft == null) A.boardingDraft = s.boardingDay != null ? s.boardingDay : boardingDay();
+    html += `<div class="card"><b>שעות המערכת (צלצולים)</b>
+      <div class="muted small" style="margin-top:4px">לפי השעות האלה בנויה מערכת השעות. שיעור משובץ לשעה שבה הוא מתחיל.</div>
+      ${A.periodsDraft.map((p, i) => `<div class="per-row"><b>שעה ${i + 1}</b><input type="time" class="per-s" value="${h(p.start)}"><span>עד</span><input type="time" class="per-e" value="${h(p.end)}"><button class="btn sm ghost danger" data-a="per-del" data-v="${i}" title="הסרה">✕</button></div>`).join('')}
+      <button class="linkbtn" data-a="per-add">+ הוספת שעה</button>
+      <label class="f">יום פנימיה (יום שבו חלק מהשעות זזות)</label>
+      <select id="set-bday" style="width:auto"><option value="">אין</option>${S.boot.days.map(x => opt(x, x, A.boardingDraft)).join('')}</select>
+      <div class="muted small" style="margin-top:6px">שעות שונות ביום פנימיה (רק לשעות שמשתנות):</div>
+      ${A.periodsDraft.map((p, i) => `<div class="per-row"><b>שעה ${i + 1}</b><input type="time" class="per-bs" value="${h(p.bStart || '')}"><span>עד</span><input type="time" class="per-be" value="${h(p.bEnd || '')}"></div>`).join('')}
+    </div>
+    <div class="card"><b>תזכורות במייל למורות</b>
       <label class="row" style="margin-top:12px;gap:8px;font-size:16px"><input type="checkbox" id="set-on"${s.remindersOn ? ' checked' : ''} style="width:20px;height:20px"> לשלוח לכל מורה תזכורת יום לפני השיעורים שלה</label>
       <div class="row" style="margin-top:6px">
         <div class="grow"><label class="f">שעת שליחה בימים א׳–ה׳</label><select id="set-hour">${hours(8, 21).map(x => opt(x, String(x).padStart(2, '0') + ':00', s.reminderHour)).join('')}</select></div>
@@ -1165,35 +1295,137 @@ function userModal(u) {
     ${u.email && u.email.toLowerCase() !== S.boot.user.email ? `<button class="btn ghost danger" style="margin-top:8px" data-a="user-del" data-v="${h(u.email)}">מחיקת המשתמשת</button>` : ''}`);
 }
 
-async function slotModal(slotId, forStudent) {
+/**
+ * חלון שיעור (שיבוץ). pre: { student, teacher, day, time } – כשנפתח מלחיצה על משבצת במערכת השעות.
+ * השדות הפחות נחוצים (תאריכי תוקף, ולפעמים גם יום ושעה) מוסתרים תחת "אפשרויות נוספות".
+ */
+async function slotModal(slotId, pre) {
+  if (typeof pre === 'string') pre = { student: pre };
+  pre = pre || {};
   let d = S.admin.data;
   if (!d) { try { d = S.admin.data = await call('adminData'); } catch (e) { return fail(e); } }
   const s = slotId ? d.slots.find(x => x.id === slotId) : null;
-  const v = s || { id: '', teacherEmail: '', subject: '', day: '', time: '', studentIds: forStudent || '', validFrom: S.today, validTo: '' };
+  const v = s || { id: '', teacherEmail: pre.teacher || '', subject: '', day: pre.day || '', time: pre.time || '', studentIds: pre.student || '', validFrom: S.today, validTo: '' };
   const chosen = v.studentIds ? v.studentIds.split(',') : [];
   const subjects = uniq(d.slots.map(x => x.subject));
   const students = d.students.filter(x => x.active !== 'לא' || chosen.includes(x.id)).sort((a, b) => a.className.localeCompare(b.className, 'he') || a.name.localeCompare(b.name, 'he'));
-  const forName = forStudent && (d.students.find(x => x.id === forStudent) || {}).name;
-  openModal(`<h3>${s ? 'עריכת שיבוץ' : forName ? 'שיבוץ חדש ל' + h(forName) : 'שיבוץ חדש'}</h3>
-    <label class="f">מורה</label><select id="m-teacher"><option value="">בחרי מורה…</option>${d.users.filter(u => u.active !== 'לא' && u.role !== ROLE_MANAGER).map(u => opt(u.email.toLowerCase(), u.name, v.teacherEmail)).join('')}</select>
-    <label class="f">מקצוע</label><input type="text" id="m-subject" list="subj-list" value="${h(v.subject)}"><datalist id="subj-list">${subjects.map(x => `<option value="${h(x)}">`).join('')}</datalist>
-    <div class="row"><div class="grow"><label class="f">יום</label><select id="m-day"><option value="">בחרי…</option>${S.boot.days.map(x => opt(x, x, v.day)).join('')}</select></div>
-    <div class="grow"><label class="f">שעה</label><input type="time" id="m-time" value="${h(v.time)}"></div></div>
-    <label class="f">תלמידות (אפשר לבחור כמה לשיעור קבוצתי)</label>
-    <div class="checks">${students.map(x => `<label><input type="checkbox" class="m-stu" value="${h(x.id)}"${chosen.includes(x.id) ? ' checked' : ''}> ${h(x.name)} <span class="muted small">${h(x.className)}</span></label>`).join('') || '<div class="muted small">יש להוסיף תלמידות קודם</div>'}</div>
-    ${s ? `<label class="f">השינוי בתוקף מתאריך</label><input type="date" id="m-eff" value="${S.today}">
-           <div class="muted small">שיעורים שדווחו לפני התאריך הזה יישארו כפי שהם.</div>`
-        : `<label class="f">בתוקף מתאריך</label><input type="date" id="m-from" value="${h(v.validFrom)}">`}
-    <label class="f">בתוקף עד תאריך (לא חובה)</label><input type="date" id="m-to" value="${h(v.validTo)}">
+  const stuName = id => (d.students.find(x => x.id === id) || {}).name || '?';
+  const teachers = d.users.filter(u => (u.active !== 'לא' || u.email.toLowerCase() === v.teacherEmail) && u.role !== ROLE_MANAGER).sort((a, b) => a.name.localeCompare(b.name, 'he'));
+  const fromGrid = !s && pre.day && pre.time;
+  const pIdx = v.time ? periodOf(v.time, v.day) : -1;
+  const exact = pIdx >= 0 && periodsFor(v.day)[pIdx].start === padT(v.time);
+  const periodVal = !v.time ? '' : exact ? String(pIdx) : 'other';
+
+  const dayTime = `<div class="row"><div class="grow"><label class="f">יום</label><select id="m-day"><option value="">בחרי…</option>${S.boot.days.map(x => opt(x, x, v.day)).join('')}</select></div>
+    <div class="grow"><label class="f">שעה במערכת</label><select id="m-period">${periodOptions(v.day, periodVal)}</select></div></div>
+    <div id="m-time-box" class="${periodVal === 'other' ? '' : 'hidden'}"><label class="f">שעת התחלה</label><input type="time" id="m-time" value="${h(padT(v.time))}"></div>`;
+  const dates = s ? `<label class="f">השינוי בתוקף מתאריך</label><input type="date" id="m-eff" value="${S.today}">
+         <div class="muted small">שיעורים שדווחו לפני התאריך הזה יישארו כפי שהם.</div>`
+      : `<label class="f">מתחיל בתאריך</label><input type="date" id="m-from" value="${h(v.validFrom)}">`;
+
+  openModal(`<h3>${s ? 'עריכת שיעור' : 'שיעור חדש'}</h3>
+    ${fromGrid ? `<div class="modal-sub">${pre.student ? h(stuName(pre.student)) + ' · ' : ''}${h(whenText(v.day, v.time))}</div>` : ''}
+    <label class="f">מורה</label><select id="m-teacher"><option value="">בחרי מורה…</option>${teachers.map(u => opt(u.email.toLowerCase(), u.name, v.teacherEmail)).join('')}<option value="__new">+ מורה חדשה…</option></select>
+    <div id="m-newt" class="hidden card" style="margin:8px 0 0;background:#f9fafb">
+      <div class="small muted">המורה תתווסף לרשימת המורות. היא לא תקבל שום הודעה עד שתשלחי לה את הקישור.</div>
+      <label class="f">שם המורה</label><input type="text" id="m-tname">
+      <label class="f">המייל שהיא בודקת (אליו יגיע קוד הכניסה)</label><input type="email" id="m-temail" dir="ltr">
+    </div>
+    <label class="f">מקצוע</label><input type="text" id="m-subject" list="subj-list" value="${h(v.subject)}" placeholder="לדוגמה: מתמטיקה"><datalist id="subj-list">${subjects.map(x => `<option value="${h(x)}">`).join('')}</datalist>
+    ${fromGrid ? '' : dayTime}
+    <label class="f">תלמידות בשיעור</label>
+    ${chosen.length ? `<div>${chosen.map(id => `<b>${h(stuName(id))}</b>`).join(', ')}</div><button class="linkbtn" data-a="m-more-stu">${chosen.length > 1 ? 'שינוי התלמידות בשיעור' : '+ להוסיף עוד תלמידה (שיעור קבוצתי)'}</button>` : ''}
+    <div id="m-stu-box" class="${chosen.length ? 'hidden' : ''}"><div class="checks">${students.map(x => `<label><input type="checkbox" class="m-stu" value="${h(x.id)}"${chosen.includes(x.id) ? ' checked' : ''}> ${h(x.name)} <span class="muted small">${h(x.className)}</span></label>`).join('') || '<div class="muted small">יש להוסיף תלמידות קודם</div>'}</div></div>
+    <div id="m-conf"></div>
+    <details style="margin-top:10px"><summary>אפשרויות נוספות</summary>
+      ${fromGrid ? dayTime : ''}
+      ${dates}
+      <label class="f">מסתיים בתאריך (לא חובה)</label><input type="date" id="m-to" value="${h(v.validTo)}">
+      <div class="muted small">בלי תאריך סיום, השיעור חוזר כל שבוע עד שמסירים אותו.</div>
+    </details>
     <div class="form-actions"><button class="btn pri" data-a="slot-save" data-v="${h(v.id)}">שמירה</button><button class="btn" data-a="modal-close">ביטול</button></div>
-    ${s ? `<button class="btn ghost danger" style="margin-top:8px" data-a="slot-del" data-v="${h(v.id)}">הסרת השיבוץ</button>` : ''}`);
+    ${s ? `<button class="btn ghost danger" style="margin-top:8px" data-a="slot-del" data-v="${h(v.id)}">הסרת השיעור מהמערכת</button>` : ''}`);
+  S.admin.editingSlot = v.id;
+  slotConflictHint();
+}
+
+function periodOptions(day, sel) {
+  return `<option value="">בחרי…</option>${periodsFor(day).map((p, i) => opt(String(i), `שעה ${i + 1} · ${periodRange(i, day)}`, sel)).join('')}<option value="other"${sel === 'other' ? ' selected' : ''}>שעה אחרת…</option>`;
+}
+function slotFormTime() {
+  const p = val('m-period');
+  if (p === 'other') return val('m-time');
+  const x = p === '' ? null : periodsFor(val('m-day'))[Number(p)];
+  return x ? x.start : '';
+}
+
+/** אזהרה (לא חוסמת) כשלמורה או לתלמידה כבר יש שיעור באותה שעה. */
+function slotConflictHint() {
+  const box = document.getElementById('m-conf'), d = S.admin.data;
+  if (!box || !d) return;
+  const probe = { id: S.admin.editingSlot || '', teacherEmail: val('m-teacher'), day: val('m-day'), time: slotFormTime(),
+    studentIds: [...document.querySelectorAll('.m-stu:checked')].map(x => x.value).join(','), validFrom: val('m-from') || val('m-eff') || S.today, validTo: val('m-to') };
+  if (!probe.day || !probe.time) { box.innerHTML = ''; return; }
+  const live = d.slots.filter(x => !x.validTo || x.validTo >= S.today);
+  const tName = {}; d.users.forEach(u => { tName[u.email.toLowerCase()] = u.name; });
+  const stuName = id => (d.students.find(x => x.id === id) || {}).name || '?';
+  const conf = conflictsOf(probe, live);
+  box.innerHTML = conf.length ? `<div class="warnbox">⚠ בשעה הזו כבר יש: ${conf.map(o => `${h(o.subject)} של ${h(tName[o.teacherEmail] || o.teacherEmail)} עם ${h(o.studentIds.split(',').map(stuName).join(', '))}`).join('; ')}. אפשר לשמור בכל זאת.</div>` : '';
+}
+
+async function saveSlotForm(id) {
+  let teacher = val('m-teacher');
+  if (teacher === '__new') {
+    const name = val('m-tname').trim(), email = val('m-temail').trim().toLowerCase();
+    if (!name || !email) return toast('יש להזין שם ומייל למורה החדשה', true);
+    try { await call('saveUser', { email, name, role: ROLE_TEACHER, active: 'כן' }); } catch (e) { return fail(e); }
+    // המורה נוצרה – מעדכנים את החלון כדי שלא תיווצר שוב אם שמירת השיעור תיכשל
+    S.admin.data.users.push({ email, name, role: ROLE_TEACHER, active: 'כן' });
+    const sel = document.getElementById('m-teacher');
+    sel.insertAdjacentHTML('afterbegin', opt(email, name, email)); sel.value = email;
+    document.getElementById('m-newt').classList.add('hidden');
+    S._bootStale = true;
+    teacher = email;
+  }
+  await adminSave('saveSlot', {
+    id, teacherEmail: teacher, subject: val('m-subject'), day: val('m-day'), time: slotFormTime(),
+    studentIds: [...document.querySelectorAll('.m-stu:checked')].map(x => x.value),
+    validFrom: val('m-from'), validTo: val('m-to'), effectiveFrom: val('m-eff'),
+  }, id ? 'השיעור עודכן ✓' : 'השיעור נוסף ✓');
+}
+
+function readPeriods() {
+  const g = c => [...document.querySelectorAll(c)].map(x => x.value);
+  const st = g('.per-s'), en = g('.per-e'), bs = g('.per-bs'), be = g('.per-be');
+  if (document.getElementById('set-bday')) S.admin.boardingDraft = val('set-bday');
+  return st.map((start, i) => Object.assign({ start, end: en[i] }, bs[i] && be[i] ? { bStart: bs[i], bEnd: be[i] } : {}));
+}
+
+async function saveSettingsForm() {
+  const chk = id => document.getElementById(id).checked;
+  const ps = readPeriods().filter(p => p.start || p.end);
+  if (!ps.length) return toast('יש להגדיר לפחות שעה אחת במערכת', true);
+  const bad = ps.findIndex(p => !p.start || !p.end || p.end <= p.start || (p.bStart && p.bEnd <= p.bStart));
+  if (bad >= 0) return toast(`בשעה ${bad + 1} חסרה שעה, או ששעת הסיום לא אחרי שעת ההתחלה`, true);
+  try {
+    const r = await call('saveSettings', {
+      remindersOn: chk('set-on'), reminderHour: val('set-hour'), fridayHour: val('set-fri'),
+      weeklyOn: chk('set-weekly'), weeklyHour: val('set-whour'), weeklyToManagers: chk('set-wmgr'), lowThreshold: val('set-thr'),
+      periods: ps, boardingDay: val('set-bday'),
+    });
+    const b = await call('bootstrap');
+    S.boot.threshold = b.threshold;
+    if (r && r.periods) { S.boot.periods = r.periods; S.boot.boardingDay = r.boardingDay || ''; toast('ההגדרות נשמרו'); }
+    else toast('ההגדרות נשמרו. שעות המערכת יישמרו אחרי עדכון השרת.', true);
+    loadAdmin();
+  } catch (e) { fail(e); }
 }
 
 async function adminSave(action, payload, msg) {
   try {
     await call(action, payload);
     closeModal(); toast(msg || 'נשמר ✓');
-    if (action === 'saveUser' || action === 'deleteUser') S.boot = Object.assign(S.boot, await call('bootstrap'));
+    if (action === 'saveUser' || action === 'deleteUser' || S._bootStale) { S._bootStale = false; S.boot = Object.assign(S.boot, await call('bootstrap')); }
     if (S.tab === 'admin') loadAdmin(); else { S.admin.data = null; if (S.tab === 'sched') loadSched(); }
   } catch (e) {
     if (/פעולה לא מוכרת/.test(e.message || '')) {
@@ -1252,17 +1484,11 @@ document.addEventListener('click', e => {
     case 'rep-print': return window.print();
     case 'rep-xlsx': return exportXlsx();
     case 'rep-gsheet': return exportGSheet();
-    case 'set-save': {
-      const chk = id => document.getElementById(id).checked;
-      return adminSave('saveSettings', {
-        remindersOn: chk('set-on'), reminderHour: val('set-hour'), fridayHour: val('set-fri'),
-        weeklyOn: chk('set-weekly'), weeklyHour: val('set-whour'), weeklyToManagers: chk('set-wmgr'), lowThreshold: val('set-thr'),
-      }, 'ההגדרות נשמרו').then(() => call('bootstrap')).then(b => { if (b) S.boot.threshold = b.threshold; });
-    }
+    case 'set-save': return saveSettingsForm();
     case 'set-test': return call('testReminder').then(r => toast(`נשלח מייל בדיקה אל ${r.sentTo} (דוגמה של ${r.sample})`)).catch(fail);
     case 'set-test-weekly': return call('testWeekly').then(r => toast(`נשלח סיכום לדוגמה (${fmtDate(r.from, false)}–${fmtDate(r.to, false)}) אל ${r.sentTo.join(', ')}`)).catch(fail);
 
-    case 'admin-sub': S.admin.sub = v; return renderAdmin();
+    case 'admin-sub': S.admin.sub = v; if (v === 'settings') { S.admin.periodsDraft = null; S.admin.boardingDraft = null; } return renderAdmin();
     case 'student-new': return studentModal();
     case 'student-edit': return studentModal(S.admin.data.students.find(s => s.id === v));
     case 'student-save': return adminSave('saveStudent', { id: v, name: val('m-name'), className: val('m-class'), approvedHours: val('m-hours'), notes: val('m-notes'), active: val('m-active') });
@@ -1274,13 +1500,25 @@ document.addEventListener('click', e => {
     case 'student-del': return confirmDelete('student', v);
     case 'student-del-yes': return adminSave('deleteStudent', { id: v }, 'התלמידה נמחקה');
     case 'slot-new': return slotModal('', el.dataset.stu || '');
-    case 'slot-view': S.admin.slotView = v; return renderAdmin();
+    case 'admin-more': S.admin.more = !(S.admin.more || ['history', 'settings'].includes(S.admin.sub)); if (!S.admin.more && ['history', 'settings'].includes(S.admin.sub)) S.admin.sub = 'students'; return renderAdmin();
+    case 'per-add': case 'per-del': {
+      const cur = readPeriods();
+      if (a === 'per-add') { const last = cur[cur.length - 1]; cur.push({ start: last ? last.end : '08:00', end: '' }); }
+      else cur.splice(Number(v), 1);
+      S.admin.periodsDraft = cur; return renderAdmin();
+    }
+    case 'tt-view': S.sched.view = v; return renderSched();
+    case 'tt-step': {
+      const sel = document.querySelector('[data-a="tt-pick"]'), i = sel.selectedIndex + Number(v);
+      if (i < 0 || i >= sel.options.length) return;
+      S.sched[S.sched.view] = sel.options[i].value; return renderSched();
+    }
+    case 'tt-day': S.sched.day = v; return renderSched();
+    case 'tt-add': return slotModal('', S.sched.view === 'student' ? { student: S.sched.student, day: el.dataset.day, time: el.dataset.time } : { teacher: S.sched.teacher, day: el.dataset.day, time: el.dataset.time });
+    case 'tt-open': S.sched.view = 'student'; S.sched.student = v; return go('sched');
+    case 'm-more-stu': document.getElementById('m-stu-box').classList.remove('hidden'); el.remove(); return;
     case 'slot-edit': return slotModal(v);
-    case 'slot-save': return adminSave('saveSlot', {
-      id: v, teacherEmail: val('m-teacher'), subject: val('m-subject'), day: val('m-day'), time: val('m-time'),
-      studentIds: [...document.querySelectorAll('.m-stu:checked')].map(x => x.value),
-      validFrom: val('m-from'), validTo: val('m-to'), effectiveFrom: val('m-eff'),
-    });
+    case 'slot-save': return saveSlotForm(v);
     case 'slot-del': return askConfirm('להסיר את השיבוץ? אם כבר דווחו עליו שיעורים, הוא רק יסתיים והדיווחים יישמרו.', 'slot-del-yes', v);
     case 'slot-del-yes': return adminSave('deleteSlot', { id: v }, 'השיבוץ הוסר');
     case 'hol-add': return adminSave('saveHoliday', { from: val('hol-from'), to: val('hol-to'), description: val('hol-desc') }, 'החופשה נוספה');
@@ -1295,8 +1533,11 @@ document.addEventListener('change', e => {
   if (a === 'day-pick') { if (el.value) { S.day.date = el.value; loadDay(); } return; }
   if (a === 'filter') { const k = el.dataset.s; S[k].f[el.dataset.k] = el.value; return k === 'dash' ? renderDash() : renderReports(); }
   if (a === 'rep-student') { S.rep.student = el.value; return renderReports(); }
-  if (a === 'sched-filter') { S.sched.f[el.dataset.k] = el.value; return renderSched(); }
-  if (a === 'admin-ended') { S.admin.showEnded = el.checked; return renderAdmin(); }
+  if (a === 'tt-pick') { S.sched[S.sched.view] = el.value; return renderSched(); }
+  if (el.id === 'm-teacher') { document.getElementById('m-newt').classList.toggle('hidden', el.value !== '__new'); return slotConflictHint(); }
+  if (el.id === 'm-period') { document.getElementById('m-time-box').classList.toggle('hidden', el.value !== 'other'); return slotConflictHint(); }
+  if (el.id === 'm-day') { const ps = document.getElementById('m-period'), cur = ps.value; ps.innerHTML = periodOptions(el.value, cur); return slotConflictHint(); }
+  if (el.id === 'm-time' || el.classList.contains('m-stu')) return slotConflictHint();
   if (a === 'hist-teacher') { S.admin.histTeacher = el.value; return renderAdmin(); }
   const fld = el.dataset.f, id = el.dataset.id;
   if (!fld || !S.forms[id]) return;
